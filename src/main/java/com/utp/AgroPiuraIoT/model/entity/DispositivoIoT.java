@@ -25,7 +25,7 @@ public class DispositivoIoT {
     private LocalDate fechaInstalacion;
 
     @PrePersist
-    void prePersist() {
+    protected void prePersist() {
         if (fechaInstalacion == null) {
             fechaInstalacion = LocalDate.now();
         }

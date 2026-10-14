@@ -35,13 +35,16 @@ public class Alerta {
     private LocalDateTime fechaAlerta;
 
     @PrePersist
-    void prePersist() {
+    protected void prePersist() {
         if (fechaAlerta == null) {
             fechaAlerta = LocalDateTime.now();
         }
     }
 
     public static Alerta generar(Lectura lectura, Umbral umbral) {
+        if (lectura == null || umbral == null) {
+            throw new IllegalArgumentException("Lectura y umbral son obligatorios para generar la alerta");
+        }
         Alerta alerta = new Alerta();
         alerta.setLectura(lectura);
         alerta.setUmbral(umbral);

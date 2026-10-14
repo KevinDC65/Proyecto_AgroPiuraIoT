@@ -47,15 +47,16 @@ public class CultivoController {
     }
 
     @PostMapping
-    String crear(@Valid @ModelAttribute("form") CultivoForm form, BindingResult errores) {
+    String crear(@Valid @ModelAttribute("form") CultivoForm form, BindingResult errores, Model model) {
         if (errores.hasErrors()) {
+            model.addAttribute("cultivoId", null);
             return "cultivos/form";
         }
         Cultivo creado = cultivos.guardar(form);
         return "redirect:/cultivos/" + creado.getIdCultivo();
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/{id:\\d+}")
     String detalle(@PathVariable Integer id, Model model) {
         model.addAttribute("cultivo", cultivos.buscar(id));
         return "cultivos/detalle";

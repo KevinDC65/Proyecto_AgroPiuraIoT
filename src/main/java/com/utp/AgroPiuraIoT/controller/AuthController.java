@@ -9,7 +9,6 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 public class AuthController {
@@ -35,8 +34,7 @@ public class AuthController {
 
     @PostMapping("/registro")
     String registrar(@Valid @ModelAttribute("registro") RegistroRequest request,
-                     BindingResult errores,
-                     RedirectAttributes redirect) {
+                     BindingResult errores) {
         if (errores.hasErrors()) {
             return "registro";
         }
@@ -46,7 +44,6 @@ public class AuthController {
             errores.reject("registro", e.getMessage());
             return "registro";
         }
-        redirect.addFlashAttribute("registrado", true);
         return "redirect:/login?registrado";
     }
 }

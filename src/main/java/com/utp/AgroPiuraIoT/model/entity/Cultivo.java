@@ -6,6 +6,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.PrePersist;
@@ -45,14 +46,16 @@ public class Cultivo {
     @Column(name = "fecha_creacion")
     private LocalDate fechaCreacion;
 
-    @ManyToMany
+    // EAGER: las vistas Thymeleaf acceden a dispositivos fuera de la transacción
+    // (open-in-view=false); con LAZY lanzaban LazyInitializationException (500).
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "cultivo_dispositivo",
             joinColumns = @JoinColumn(name = "id_cultivo"),
             inverseJoinColumns = @JoinColumn(name = "id_dispositivo"))
     private Set<DispositivoIoT> dispositivos = new HashSet<>();
 
     @PrePersist
-    void prePersist() {
+    protected void prePersist() {
         if (fechaCreacion == null) {
             fechaCreacion = LocalDate.now();
         }

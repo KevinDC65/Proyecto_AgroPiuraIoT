@@ -36,6 +36,12 @@
             <form th:action="@{/cultivos/{id}/dispositivos/nuevo(id=${cultivo.idCultivo})}" method="post">
                 <button class="btn chico" type="submit">Registrar y asignar nuevo nodo</button>
             </form>
+            <form th:action="@{/cultivos/{id}/dispositivos(id=${cultivo.idCultivo})}" method="post" class="form inline">
+                <label>Asignar nodo existente por ID
+                    <input type="number" name="idDispositivo" min="1" required placeholder="Ej. 3">
+                </label>
+                <button class="btn claro chico" type="submit">Asignar</button>
+            </form>
             <h2>Umbrales</h2>
             <p class="alerta exito">La configuración de umbrales por parcela estará disponible próximamente.</p>
         </div>

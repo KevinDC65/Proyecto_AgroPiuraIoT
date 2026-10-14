@@ -32,7 +32,7 @@ public class Lectura {
     private LocalDateTime fechaHora;
 
     @PrePersist
-    void prePersist() {
+    protected void prePersist() {
         if (fechaHora == null) {
             fechaHora = LocalDateTime.now();
         }

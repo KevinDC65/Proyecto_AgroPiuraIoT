@@ -34,7 +34,7 @@ public class Usuario {
     private LocalDate fechaRegistro;
 
     @PrePersist
-    void prePersist() {
+    protected void prePersist() {
         if (fechaRegistro == null) {
             fechaRegistro = LocalDate.now();
         }

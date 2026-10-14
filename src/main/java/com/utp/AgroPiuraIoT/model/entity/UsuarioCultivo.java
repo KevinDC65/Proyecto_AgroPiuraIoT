@@ -36,7 +36,7 @@ public class UsuarioCultivo {
     private LocalDate fechaAsignada;
 
     @PrePersist
-    void prePersist() {
+    protected void prePersist() {
         if (fechaAsignada == null) {
             fechaAsignada = LocalDate.now();
         }
