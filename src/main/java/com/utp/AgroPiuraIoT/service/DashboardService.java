@@ -16,6 +16,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -122,10 +123,12 @@ public class DashboardService {
     }
 
     private BigDecimal promedio(List<BigDecimal> valores) {
-        if (valores.isEmpty()) {
+        if (valores == null || valores.isEmpty()) {
             return null;
         }
-        BigDecimal suma = valores.stream().reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal suma = valores.stream()
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, (a, b) -> a.add(b));
         return suma.divide(BigDecimal.valueOf(valores.size()), 2, RoundingMode.HALF_UP);
     }
 }
