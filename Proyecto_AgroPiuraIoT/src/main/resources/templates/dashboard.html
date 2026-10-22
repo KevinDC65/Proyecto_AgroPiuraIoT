@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('Dashboard')}"></head>
+<body class="app">
+<div class="shell">
+    <aside th:replace="~{layout :: sidebar('dashboard')}"></aside>
+    <main class="principal">
+        <div class="fila-titulo">
+            <span class="migas">Inicio &gt; Dashboard</span>
+            <span class="sincro" th:text="'Última sincronización: ' + ${resumen.ultimaSincronizacion}"></span>
+        </div>
+        <h1>Resumen de hoy</h1>
+        <section class="kpis">
+            <article class="card kpi"><small>Cultivos activos</small><strong th:text="${resumen.cultivosActivos}"></strong></article>
+            <article class="card kpi destacado"><small>Alertas activas</small><strong th:text="${resumen.alertasActivas}"></strong></article>
+            <article class="card kpi"><small>Humedad promedio</small><strong th:text="${resumen.humedadPromedio} != null ? ${resumen.humedadPromedio} + '%' : '-'"></strong></article>
+            <article class="card kpi"><small>Temp. promedio</small><strong th:text="${resumen.temperaturaPromedio} != null ? ${resumen.temperaturaPromedio} + '°C' : '-'"></strong></article>
+        </section>
+        <section class="paneles">
+            <article class="card">
+                <h2>Humedad general</h2>
+                <div class="demo-fila">
+                    <div class="donut" th:style="'--p:' + (${resumen.humedadPromedio} != null ? ${resumen.humedadPromedio} : 0)">
+                        <span th:text="(${resumen.humedadPromedio} != null ? ${resumen.humedadPromedio} : 0) + '%'"></span>
+                    </div>
+                    <div>
+                        <p><span class="suave">Rango ideal</span><br><strong>35% - 80%</strong></p>
+                        <p><span class="suave">Última lectura</span><br><strong th:text="${resumen.ultimaSincronizacion}"></strong></p>
+                    </div>
+                </div>
+            </article>
+            <article class="panel-vidrio">
+                <h2>Cultivos</h2>
+                <p th:if="${#lists.isEmpty(resumen.cultivos)}">Registra tu primer cultivo para ver datos aquí.</p>
+                <div class="fila-cultivo" th:each="c : ${resumen.cultivos}">
+                    <div>
+                        <strong th:text="${c.nombre}"></strong><br>
+                        <small th:if="${c.humedad} != null or ${c.temperatura} != null"
+                               th:text="'Humedad ' + (${c.humedad} ?: '-') + '% · ' + (${c.temperatura} ?: '-') + '°C'"></small>
+                        <small th:if="${c.humedad} == null and ${c.temperatura} == null">Sensor desconectado</small>
+                    </div>
+                    <span class="badge badge-alerta" th:if="${c.estado} == 'ALERTA'">Alerta</span>
+                    <span class="badge badge-ok" th:if="${c.estado} == 'NORMAL'">Normal</span>
+                    <span class="badge badge-mutes" th:if="${c.estado} == 'SIN_DATOS'">Sin datos</span>
+                </div>
+            </article>
+        </section>
+    </main>
+</div>
+</body>
+</html>

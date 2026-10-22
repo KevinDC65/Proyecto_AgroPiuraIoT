@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('Cultivos')}"></head>
+<body class="app">
+<div class="shell">
+    <aside th:replace="~{layout :: sidebar('cultivos')}"></aside>
+    <main class="principal">
+        <div class="fila-titulo">
+            <span class="migas">Inicio &gt; Cultivos</span>
+            <div>
+                <a class="btn claro chico" th:href="@{/cultivos/exportar.xlsx}">Exportar Excel</a>
+                <a class="btn" th:href="@{/cultivos/nuevo}">+ Nuevo cultivo</a>
+            </div>
+        </div>
+        <h1>Cultivos</h1>
+        <div class="card">
+            <p th:if="${#lists.isEmpty(cultivos)}">Aún no hay cultivos registrados.</p>
+            <table class="tabla" th:unless="${#lists.isEmpty(cultivos)}">
+                <thead>
+                <tr><th>Nombre</th><th>Tipo</th><th>Zona</th><th>Área (ha)</th><th>Dispositivo</th><th>Acciones</th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="c : ${cultivos}">
+                    <td><span class="fuerte" th:text="${c.nombre}"></span><br>
+                        <span class="suave" th:text="${c.tipoCultivo}"></span></td>
+                    <td th:text="${c.tipoCultivo}"></td>
+                    <td th:text="${c.ubicacion} ?: '-'"></td>
+                    <td th:text="${c.areaHa} ?: '-'"></td>
+                    <td>
+                        <span class="badge badge-ok" th:if="${!#sets.isEmpty(c.dispositivos)}">Activo</span>
+                        <span class="badge badge-mutes" th:if="${#sets.isEmpty(c.dispositivos)}">Inactivo</span>
+                    </td>
+                    <td>
+                        <a class="btn claro chico" th:href="@{/cultivos/{id}(id=${c.idCultivo})}">Detalle</a>
+                        <a class="btn claro chico" th:href="@{/cultivos/{id}/editar(id=${c.idCultivo})}">Editar</a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+</body>
+</html>

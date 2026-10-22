@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('Crear cuenta')}"></head>
+<body class="publico">
+<div th:replace="~{layout :: topPublico}"></div>
+<main class="auth-card">
+    <h1>AgroPiura IoT</h1>
+    <p class="auth-sub">Crea tu cuenta de productor</p>
+    <form th:action="@{/registro}" th:object="${registro}" method="post" class="form">
+        <div class="alerta error" th:if="${#fields.hasGlobalErrors()}"
+             th:each="err : ${#fields.globalErrors()}" th:text="${err}"></div>
+        <label>Nombre
+            <input type="text" th:field="*{nombre}" placeholder="Tu nombre" maxlength="150" required>
+            <span class="error" th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}"></span>
+        </label>
+        <label>Correo electrónico
+            <input type="email" th:field="*{correo}" placeholder="nombre@correo.com" maxlength="150" required>
+            <span class="error" th:if="${#fields.hasErrors('correo')}" th:errors="*{correo}"></span>
+        </label>
+        <label>Contraseña (mínimo 8 caracteres)
+            <input type="password" th:field="*{contrasena}" placeholder="••••••••" required minlength="8">
+            <span class="error" th:if="${#fields.hasErrors('contrasena')}" th:errors="*{contrasena}"></span>
+        </label>
+        <label>Confirmar contraseña
+            <input type="password" th:field="*{confirmacion}" placeholder="••••••••" required>
+            <span class="error" th:if="${#fields.hasErrors('confirmacion')}" th:errors="*{confirmacion}"></span>
+        </label>
+        <button class="btn" type="submit">Crear cuenta</button>
+    </form>
+    <p class="auth-alt">¿Ya tienes cuenta? <a th:href="@{/login}">Ingresa aquí</a></p>
+</main>
+</body>
+</html>
