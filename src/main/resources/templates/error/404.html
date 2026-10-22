@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+  <head th:replace="~{components/layout :: head('Portada')}"></head>
+  <body class="publico">
+    <div th:replace="~{components/layout :: topPublico}"></div>
+    <main class="portada">
+      <h1>404 Not Found</h1>
+      <p>La pagina que estas buscando no existe.</p>
+      <!-- Spring Boot injects these variables automatically -->
+      <p th:text="${'Path: ' + path}"></p>
+      <p th:text="${'Timestamp: ' + timestamp}"></p>
+      <a href="/">Volver</a>
+    </main>
+  </body>
+</html>
