@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('Detalle de cultivo')}"></head>
+<body class="app">
+<div class="shell">
+    <aside th:replace="~{layout :: sidebar('cultivos')}"></aside>
+    <main class="principal">
+        <span class="migas">Inicio &gt; Cultivos &gt; Detalle</span>
+        <div class="fila-titulo">
+            <h1 th:text="${cultivo.nombre}"></h1>
+            <div>
+                <a class="btn claro chico" th:href="@{/cultivos/{id}/editar(id=${cultivo.idCultivo})}">Editar</a>
+                <form th:action="@{/cultivos/{id}/eliminar(id=${cultivo.idCultivo})}" method="post" class="inline"
+                      onsubmit="return confirm('¿Eliminar este cultivo?');">
+                    <button class="btn claro chico" type="submit">Eliminar</button>
+                </form>
+            </div>
+        </div>
+        <div class="card">
+            <p><strong>Tipo:</strong> <span th:text="${cultivo.tipoCultivo}"></span>
+                · <strong>Zona:</strong> <span th:text="${cultivo.ubicacion} ?: '-'"></span>
+                · <strong>Área:</strong> <span th:text="${cultivo.areaHa} != null ? ${cultivo.areaHa} + ' ha' : '-'"></span></p>
+            <h2>Dispositivos IoT</h2>
+            <p th:if="${#sets.isEmpty(cultivo.dispositivos)}">Sin dispositivos asignados.</p>
+            <table class="tabla" th:unless="${#sets.isEmpty(cultivo.dispositivos)}">
+                <thead><tr><th>ID</th><th>Estado</th><th>Instalación</th></tr></thead>
+                <tbody>
+                <tr th:each="d : ${cultivo.dispositivos}">
+                    <td th:text="${d.idDispositivo}"></td>
+                    <td><span class="badge badge-ok" th:if="${d.estaActivo()}">Activo</span>
+                        <span class="badge badge-mutes" th:unless="${d.estaActivo()}">Inactivo</span></td>
+                    <td th:text="${d.fechaInstalacion}"></td>
+                </tr>
+                </tbody>
+            </table>
+            <form th:action="@{/cultivos/{id}/dispositivos/nuevo(id=${cultivo.idCultivo})}" method="post">
+                <button class="btn chico" type="submit">Registrar y asignar nuevo nodo</button>
+            </form>
+            <form th:action="@{/cultivos/{id}/dispositivos(id=${cultivo.idCultivo})}" method="post" class="form inline">
+                <label>Asignar nodo existente por ID
+                    <input type="number" name="idDispositivo" min="1" required placeholder="Ej. 3">
+                </label>
+                <button class="btn claro chico" type="submit">Asignar</button>
+            </form>
+            <h2>Umbrales</h2>
+            <p class="alerta exito">La configuración de umbrales por parcela estará disponible próximamente.</p>
+        </div>
+        <p><a style="color:#fff" th:href="@{/cultivos}">Volver al listado</a></p>
+    </main>
+</div>
+</body>
+</html>

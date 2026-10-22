@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head(${cultivoId} == null ? 'Nuevo cultivo' : 'Editar cultivo')}"></head>
+<body class="app">
+<div class="shell">
+    <aside th:replace="~{layout :: sidebar('cultivos')}"></aside>
+    <main class="principal">
+        <span class="migas">Inicio &gt; Cultivos</span>
+        <h1 th:text="${cultivoId} == null ? 'Nuevo cultivo' : 'Editar cultivo'"></h1>
+        <div class="card" style="max-width:560px">
+            <form th:action="${cultivoId} == null ? @{/cultivos} : @{/cultivos/{id}/editar(id=${cultivoId})}"
+                  th:object="${form}" method="post" class="form">
+                <label>Nombre
+                    <input type="text" th:field="*{nombre}" maxlength="150" required>
+                    <span class="error" th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}"></span>
+                </label>
+                <label>Tipo de cultivo (mango, limón, arroz, banano…)
+                    <input type="text" th:field="*{tipoCultivo}" maxlength="100" required>
+                    <span class="error" th:if="${#fields.hasErrors('tipoCultivo')}" th:errors="*{tipoCultivo}"></span>
+                </label>
+                <label>Zona
+                    <input type="text" th:field="*{ubicacion}" maxlength="200" placeholder="Ej. Chulucanas">
+                </label>
+                <label>Área (ha)
+                    <input type="number" step="0.01" min="0" th:field="*{areaHa}" placeholder="Ej. 3.2">
+                    <span class="error" th:if="${#fields.hasErrors('areaHa')}" th:errors="*{areaHa}"></span>
+                </label>
+                <label>Latitud
+                    <input type="number" step="0.000001" min="-90" max="90" th:field="*{latitud}">
+                    <span class="error" th:if="${#fields.hasErrors('latitud')}" th:errors="*{latitud}"></span>
+                </label>
+                <label>Longitud
+                    <input type="number" step="0.000001" min="-180" max="180" th:field="*{longitud}">
+                    <span class="error" th:if="${#fields.hasErrors('longitud')}" th:errors="*{longitud}"></span>
+                </label>
+                <button class="btn" type="submit">Guardar</button>
+            </form>
+        </div>
+        <p><a style="color:#fff" th:href="@{/cultivos}">Volver al listado</a></p>
+    </main>
+</div>
+</body>
+</html>
