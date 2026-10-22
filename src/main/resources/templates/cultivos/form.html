@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{layout :: head(${cultivoId} == null ? 'Nuevo cultivo' : 'Editar cultivo')}"></head>
+<head th:replace="~{components/layout :: head(${cultivoId} == null ? 'Nuevo cultivo' : 'Editar cultivo')}"></head>
 <body class="app">
 <div class="shell">
-    <aside th:replace="~{layout :: sidebar('cultivos')}"></aside>
+    <aside th:replace="~{components/layout :: sidebar('cultivos')}"></aside>
     <main class="principal">
         <span class="migas">Inicio &gt; Cultivos</span>
         <h1 th:text="${cultivoId} == null ? 'Nuevo cultivo' : 'Editar cultivo'"></h1>
