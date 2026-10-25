@@ -7,4 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface AlertaRepository extends JpaRepository<Alerta, Integer> {
 
     List<Alerta> findByUmbralCultivoIdCultivoOrderByFechaAlertaDesc(Integer idCultivo);
+
+    List<Alerta> findAllByOrderByFechaAlertaDesc();
 }

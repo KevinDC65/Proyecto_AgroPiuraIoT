@@ -77,6 +77,30 @@ public class AlertasService {
         return alertas.findByUmbralCultivoIdCultivoOrderByFechaAlertaDesc(idCultivo);
     }
 
+    @Transactional(readOnly = true)
+    public List<Alerta> listarTodas() {
+        return alertas.findAllByOrderByFechaAlertaDesc();
+    }
+
+    /** Notificaciones no leídas del usuario indicado (por correo). */
+    @Transactional(readOnly = true)
+    public List<NotificacionUsuario> notificacionesDe(String correo) {
+        return notificaciones.findByUsuarioCorreoAndLeidoFalseOrderByIdNotificacionDesc(correo);
+    }
+
+    /** Marca una notificación como leída, verificando que pertenezca al usuario. */
+    @Transactional
+    public void marcarLeida(Integer idNotificacion, String correo) {
+        NotificacionUsuario notificacion = notificaciones.findById(idNotificacion)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Notificación no encontrada: " + idNotificacion));
+        if (!notificacion.getUsuario().getCorreo().equals(correo)) {
+            throw new IllegalArgumentException("La notificación no pertenece al usuario");
+        }
+        notificacion.marcarLeida();
+        notificaciones.save(notificacion);
+    }
+
     private void notificar(List<com.utp.AgroPiuraIoT.model.entity.UsuarioCultivo> usuariosDelCultivo,
                            Alerta alerta) {
         for (com.utp.AgroPiuraIoT.model.entity.UsuarioCultivo acceso : usuariosDelCultivo) {

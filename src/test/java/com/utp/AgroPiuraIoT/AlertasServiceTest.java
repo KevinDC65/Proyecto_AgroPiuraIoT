@@ -159,4 +159,20 @@ class AlertasServiceTest {
         assertFalse(alertaRepo.count() == 0);
         assertTrue(notificaciones.count() >= 1);
     }
+
+    @Test
+    void listaYMarcaNotificacionComoLeida() {
+        Cultivo cultivo = prepararEscenario();
+        asignarUsuario(cultivo);
+        Lectura lectura = registrarLectura(cultivo, "12");
+        alertas.evaluar(lectura);
+
+        var mias = alertas.notificacionesDe("productor@test.pe");
+        assertEquals(1, mias.size());
+
+        alertas.marcarLeida(mias.get(0).getIdNotificacion(), "productor@test.pe");
+
+        var trasLeer = alertas.notificacionesDe("productor@test.pe");
+        assertTrue(trasLeer.isEmpty());
+    }
 }

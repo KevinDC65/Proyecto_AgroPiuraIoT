@@ -9,4 +9,6 @@ public interface NotificacionUsuarioRepository extends JpaRepository<Notificacio
     List<NotificacionUsuario> findByUsuarioIdUsuarioAndLeidoFalse(Integer idUsuario);
 
     List<NotificacionUsuario> findByAlertaIdAlerta(Integer idAlerta);
+
+    List<NotificacionUsuario> findByUsuarioCorreoAndLeidoFalseOrderByIdNotificacionDesc(String correo);
 }

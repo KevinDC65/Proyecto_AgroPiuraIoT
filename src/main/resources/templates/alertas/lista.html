@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('Alertas')}"></head>
+<body class="app">
+<div class="shell">
+    <aside th:replace="~{components/layout :: sidebar('alertas')}"></aside>
+    <main class="principal">
+        <span class="migas">Inicio &gt; Alertas</span>
+        <h1>Alertas</h1>
+
+        <div class="card">
+            <h2>Mis notificaciones sin leer</h2>
+            <p th:if="${#lists.isEmpty(notificaciones)}">No tienes notificaciones pendientes.</p>
+            <div th:unless="${#lists.isEmpty(notificaciones)}">
+                <div class="alerta error" th:each="n : ${notificaciones}"
+                     style="margin-bottom:0.5rem; display:flex; align-items:center; gap:0.8rem;">
+                    <span th:text="${n.alerta.mensaje}"></span>
+                    <form th:action="@{/alertas/{id}/leida(id=${n.idNotificacion})}" method="post" class="inline">
+                        <button class="btn claro chico" type="submit">Marcar como leída</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Historial de alertas</h2>
+            <p th:if="${#lists.isEmpty(alertas)}">Aún no se han generado alertas en el sistema.</p>
+            <table class="tabla" th:unless="${#lists.isEmpty(alertas)}">
+                <thead><tr><th>Fecha</th><th>Cultivo</th><th>Variable</th><th>Mensaje</th></tr></thead>
+                <tbody>
+                <tr th:each="a : ${alertas}">
+                    <td th:text="${a.fechaAlerta}"></td>
+                    <td>
+                        <a style="color:#fff"
+                           th:href="@{/cultivos/{id}/umbrales(id=${a.umbral.cultivo.idCultivo})}"
+                           th:text="${a.umbral.cultivo.nombre}"></a>
+                    </td>
+                    <td th:text="${a.umbral.tipoSensor.obtenerNombre()}"></td>
+                    <td th:text="${a.mensaje}"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+</body>
+</html>
