@@ -43,7 +43,8 @@
                 <button class="btn claro chico" type="submit">Asignar</button>
             </form>
             <h2>Umbrales</h2>
-            <p class="alerta exito">La configuración de umbrales por parcela estará disponible próximamente.</p>
+            <p>Define aquí los límites mínimos y máximos por variable; de ellos dependen las alertas del sistema.</p>
+            <a class="btn chico" th:href="@{/cultivos/{id}/umbrales(id=${cultivo.idCultivo})}">Configurar umbrales</a>
         </div>
         <p><a style="color:#fff" th:href="@{/cultivos}">Volver al listado</a></p>
     </main>

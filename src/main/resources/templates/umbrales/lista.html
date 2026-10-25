@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{layout :: head('Umbrales')}"></head>
+<body class="app">
+<div class="shell">
+    <aside th:replace="~{components/layout :: sidebar('umbrales')}"></aside>
+    <main class="principal">
+        <span class="migas">Inicio &gt; Cultivos &gt; <span th:text="${cultivo.nombre}"></span> &gt; Umbrales</span>
+        <h1 th:text="'Umbrales de ' + ${cultivo.nombre}"></h1>
+
+        <div class="card">
+            <h2>Umbrales configurados</h2>
+            <p th:if="${#lists.isEmpty(umbrales)}">Aún no hay umbrales configurados para este cultivo.</p>
+            <table class="tabla" th:unless="${#lists.isEmpty(umbrales)}">
+                <thead><tr><th>Variable</th><th>Mínimo</th><th>Máximo</th><th></th></tr></thead>
+                <tbody>
+                <tr th:each="u : ${umbrales}">
+                    <td th:text="${u.tipoSensor.obtenerNombre()}"></td>
+                    <td th:text="${u.valorMinimo}"></td>
+                    <td th:text="${u.valorMaximo}"></td>
+                    <td>
+                        <a class="btn claro chico"
+                           th:href="@{/cultivos/{id}/umbrales(id=${cultivo.idCultivo}, editar=${u.idUmbral})}">Editar</a>
+                        <form th:action="@{/cultivos/{id}/umbrales/{idU}/eliminar(id=${cultivo.idCultivo}, idU=${u.idUmbral})}"
+                              method="post" class="inline"
+                              onsubmit="return confirm('¿Eliminar este umbral?');">
+                            <button class="btn claro chico" type="submit">Eliminar</button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h2 th:text="${umbralEditado} != null ? 'Editar umbral' : 'Nuevo umbral'"></h2>
+            <form th:action="@{/cultivos/{id}/umbrales(id=${cultivo.idCultivo})}" method="post" class="form"
+                  th:object="${form}">
+                <label>Variable monitoreada
+                    <select name="idTipoSensor" required>
+                        <option value="" disabled th:selected="*{idTipoSensor} == null">Seleccione una variable</option>
+                        <option th:each="t : ${tiposSensor}"
+                                th:value="${t.idTipoSensor}"
+                                th:text="${t.obtenerNombre()}"
+                                th:selected="*{idTipoSensor} != null and *{idTipoSensor} == ${t.idTipoSensor}"></option>
+                    </select>
+                </label>
+                <label>Valor mínimo
+                    <input type="number" name="valorMinimo" step="0.01" min="0" max="1000" required
+                           th:value="*{valorMinimo}" placeholder="Ej. 20">
+                </label>
+                <label>Valor máximo
+                    <input type="number" name="valorMaximo" step="0.01" min="0" max="1000" required
+                           th:value="*{valorMaximo}" placeholder="Ej. 80">
+                </label>
+                <p class="alerta error" th:if="${#fields.hasErrors('idTipoSensor')}" th:errors="*{idTipoSensor}"></p>
+                <p class="alerta error" th:if="${#fields.hasErrors('valorMinimo')}" th:errors="*{valorMinimo}"></p>
+                <p class="alerta error" th:if="${#fields.hasErrors('valorMaximo')}" th:errors="*{valorMaximo}"></p>
+                <div>
+                    <button class="btn" type="submit"
+                            th:text="${umbralEditado} != null ? 'Guardar cambios' : 'Agregar umbral'"></button>
+                </div>
+            </form>
+        </div>
+
+        <p><a style="color:#fff" th:href="@{/cultivos/{id}(id=${cultivo.idCultivo})}">Volver al detalle del cultivo</a></p>
+    </main>
+</div>
+</body>
+</html>

@@ -53,6 +53,16 @@ public class UmbralService {
         return umbrales.save(umbral);
     }
 
+    @Transactional(readOnly = true)
+    public Umbral buscar(Integer idCultivo, Integer idUmbral) {
+        Umbral umbral = umbrales.findById(idUmbral)
+                .orElseThrow(() -> new IllegalArgumentException("Umbral no encontrado: " + idUmbral));
+        if (!umbral.getCultivo().getIdCultivo().equals(idCultivo)) {
+            throw new IllegalArgumentException("El umbral no pertenece al cultivo indicado");
+        }
+        return umbral;
+    }
+
     @Transactional
     public void eliminar(Integer idCultivo, Integer idUmbral) {
         Umbral umbral = umbrales.findById(idUmbral)

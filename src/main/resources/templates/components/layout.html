@@ -20,7 +20,7 @@
     <a class="marca" th:href="@{/dashboard}">AgroPiura IoT</a>
     <a class="nav-item" th:classappend="${activo} == 'dashboard' ? ' activo'" th:href="@{/dashboard}">⌂ Dashboard</a>
     <a class="nav-item" th:classappend="${activo} == 'cultivos' ? ' activo'" th:href="@{/cultivos}">◫ Cultivos</a>
-    <span class="nav-item pronto">◔ Umbrales<span class="sello-pronto">Pronto</span></span>
+    <a class="nav-item" th:classappend="${activo} == 'umbrales' ? ' activo'" th:href="@{/umbrales}">◔ Umbrales</a>
     <span class="nav-item pronto">⚠ Alertas<span class="sello-pronto">Pronto</span></span>
     <span class="nav-item pronto">📈 Histórico<span class="sello-pronto">Pronto</span></span>
     <span class="nav-item pronto">💳 Pagos<span class="sello-pronto">Pronto</span></span>
