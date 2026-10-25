@@ -22,7 +22,7 @@
     <a class="nav-item" th:classappend="${activo} == 'cultivos' ? ' activo'" th:href="@{/cultivos}">◫ Cultivos</a>
     <a class="nav-item" th:classappend="${activo} == 'umbrales' ? ' activo'" th:href="@{/umbrales}">◔ Umbrales</a>
     <a class="nav-item" th:classappend="${activo} == 'alertas' ? ' activo'" th:href="@{/alertas}">⚠ Alertas</a>
-    <span class="nav-item pronto">📈 Histórico<span class="sello-pronto">Pronto</span></span>
+    <a class="nav-item" th:classappend="${activo} == 'historico' ? ' activo'" th:href="@{/historico}">📈 Histórico</a>
     <span class="nav-item pronto">💳 Pagos<span class="sello-pronto">Pronto</span></span>
     <div sec:authorize="isAuthenticated()" style="margin-top:1rem">
         <form th:action="@{/logout}" method="post">

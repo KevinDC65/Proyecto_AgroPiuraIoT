@@ -1,5 +1,6 @@
 package com.utp.AgroPiuraIoT.service;
 
+import com.utp.AgroPiuraIoT.model.dto.LecturaPunto;
 import com.utp.AgroPiuraIoT.model.entity.Lectura;
 import com.utp.AgroPiuraIoT.model.entity.Umbral;
 import com.utp.AgroPiuraIoT.repository.CultivoRepository;
@@ -54,5 +55,28 @@ public class HistoricoService {
             throws IOException {
         List<Lectura> datos = consultar(idCultivo, desde, hasta);
         return HistoricoExcelExporter.exportar(datos, umbralesDelCultivo(idCultivo));
+    }
+
+    /** Puntos listos para el gráfico del dashboard histórico. */
+    @Transactional(readOnly = true)
+    public List<LecturaPunto> puntos(Integer idCultivo, LocalDate desde, LocalDate hasta) {
+        List<Umbral> umbralesCultivo = umbralesDelCultivo(idCultivo);
+        return consultar(idCultivo, desde, hasta).stream()
+                .map(l -> toPunto(l, umbralesCultivo))
+                .toList();
+    }
+
+    private static LecturaPunto toPunto(Lectura l, List<Umbral> umbralesCultivo) {
+        Umbral umbral = umbralesCultivo.stream()
+                .filter(u -> u.getTipoSensor().getIdTipoSensor()
+                        .equals(l.getSensor().getTipoSensor().getIdTipoSensor()))
+                .findFirst()
+                .orElse(null);
+        return new LecturaPunto(
+                HistoricoExcelExporter.FORMATO.format(l.getFechaHora()),
+                l.getSensor().getTipoSensor().obtenerNombre(),
+                l.getValor().doubleValue(),
+                l.getSensor().getTipoSensor().getUnidadMedida(),
+                l.estaFueraDeRango(umbral));
     }
 }
