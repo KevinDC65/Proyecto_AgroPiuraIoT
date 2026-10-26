@@ -44,7 +44,8 @@ public class OpenWeatherCliente implements ClienteClima {
         }
         try {
             OpenWeatherRespuesta respuesta = clienteWeb.get()
-                    .uri(uri -> uri.queryParam("q", ubicacion)
+                    .uri(uri -> uri.path("/weather")
+                            .queryParam("q", ubicacion)
                             .queryParam("appid", apiKey)
                             .queryParam("units", "metric")
                             .queryParam("lang", "es")
