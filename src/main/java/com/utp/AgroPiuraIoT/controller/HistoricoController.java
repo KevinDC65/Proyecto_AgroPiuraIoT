@@ -1,12 +1,8 @@
 package com.utp.AgroPiuraIoT.controller;
 
 import com.utp.AgroPiuraIoT.model.entity.Cultivo;
-import com.utp.AgroPiuraIoT.model.entity.Lectura;
-import com.utp.AgroPiuraIoT.model.entity.Umbral;
-import com.utp.AgroPiuraIoT.model.dto.LecturaPunto;
-import com.utp.AgroPiuraIoT.repository.CultivoRepository;
+import com.utp.AgroPiuraIoT.service.CultivoService;
 import com.utp.AgroPiuraIoT.service.HistoricoService;
-import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.util.List;
 import org.springframework.http.ContentDisposition;
@@ -23,9 +19,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class HistoricoController {
 
     private final HistoricoService historico;
-    private final CultivoRepository cultivos;
+    private final CultivoService cultivos;
 
-    public HistoricoController(HistoricoService historico, CultivoRepository cultivos) {
+    public HistoricoController(HistoricoService historico, CultivoService cultivos) {
         this.historico = historico;
         this.cultivos = cultivos;
     }

@@ -10,3 +10,11 @@ spring.datasource.driver-class-name=org.postgresql.Driver
 spring.jpa.hibernate.ddl-auto=validate
 spring.jpa.show-sql=false
 spring.jpa.open-in-view=false
+
+# RF-06 — Clima de terceros (OpenWeatherMap). Sin API key el clima se
+# desactiva de forma elegante (no aparece en el dashboard, no hay errores).
+clima.openweather.api-key=
+# Base URL del proveedor (por defecto la API 2.5 oficial)
+# clima.openweather.url=https://api.openweathermap.org/data/2.5
+# Minutos de cache por ubicación (Guava) para respetar el límite del plan gratuito
+# clima.cache.minutos=30

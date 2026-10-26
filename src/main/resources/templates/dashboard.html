@@ -16,6 +16,18 @@
             <article class="card kpi"><small>Humedad promedio</small><strong th:text="${resumen.humedadPromedio} != null ? ${resumen.humedadPromedio} + '%' : '-'"></strong></article>
             <article class="card kpi"><small>Temp. promedio</small><strong th:text="${resumen.temperaturaPromedio} != null ? ${resumen.temperaturaPromedio} + '°C' : '-'"></strong></article>
         </section>
+        <!-- RF-06: clima de terceros. Solo se muestra si el proveedor devolvió datos
+             (requiere cultivo con ubicación y API key de OpenWeatherMap). -->
+        <section class="kpis" th:if="${clima} != null">
+            <article class="card kpi">
+                <small th:text="'Clima · ' + ${clima.ciudad}"></small>
+                <strong th:text="${#numbers.formatDecimal(clima.temperaturaCelsius, 1, 1)} + '°C'"></strong>
+                <small>
+                    <span th:text="'Humedad ' + ${#numbers.formatDecimal(clima.humedadPorcentaje, 1, 0)} + '%'"></span> ·
+                    <span th:text="${clima.condicion}"></span>
+                </small>
+            </article>
+        </section>
         <section class="paneles">
             <article class="card">
                 <h2>Humedad general</h2>
