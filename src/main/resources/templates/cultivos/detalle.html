@@ -45,6 +45,9 @@
             <h2>Umbrales</h2>
             <p>Define aquí los límites mínimos y máximos por variable; de ellos dependen las alertas del sistema.</p>
             <a class="btn chico" th:href="@{/cultivos/{id}/umbrales(id=${cultivo.idCultivo})}">Configurar umbrales</a>
+            <h2>Accesos</h2>
+            <p>Administra qué usuarios colaboran en este cultivo y con qué rol.</p>
+            <a class="btn chico" th:href="@{/cultivos/{id}/accesos(id=${cultivo.idCultivo})}">Gestionar accesos</a>
         </div>
         <p><a style="color:#fff" th:href="@{/cultivos}">Volver al listado</a></p>
     </main>

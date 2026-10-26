@@ -2,6 +2,7 @@ package com.utp.AgroPiuraIoT.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -22,6 +23,10 @@ public class SecurityConfig {
         http.authorizeHttpRequests(auth -> auth
                         .requestMatchers("/", "/login", "/registro",
                                 "/css/**", "/js/**", "/img/**", "/error").permitAll()
+                        // RF-07: solo un administrador modifica accesos por cultivo
+                        .requestMatchers(HttpMethod.POST,
+                                "/cultivos/*/accesos", "/cultivos/*/accesos/*")
+                        .hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .formLogin(form -> form
                         .loginPage("/login")

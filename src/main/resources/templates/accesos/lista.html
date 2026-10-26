@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{layout :: head('Accesos')}"></head>
+<body class="app">
+<div class="shell">
+    <aside th:replace="~{components/layout :: sidebar('cultivos')}"></aside>
+    <main class="principal">
+        <span class="migas">Inicio &gt; Cultivos &gt; <span th:text="${cultivo.nombre}"></span> &gt; Accesos</span>
+        <h1 th:text="'Accesos de ' + ${cultivo.nombre}"></h1>
+
+        <p class="alerta error" th:if="${error}" th:text="${error}"></p>
+        <p class="alerta ok" th:if="${mensaje}" th:text="${mensaje}"></p>
+
+        <div class="card">
+            <h2>Usuarios con acceso</h2>
+            <p th:if="${#lists.isEmpty(accesos)}">Ningún usuario tiene acceso a este cultivo todavía.</p>
+            <table class="tabla" th:unless="${#lists.isEmpty(accesos)}">
+                <thead><tr><th>Usuario</th><th>Correo</th><th>Rol</th><th>Asignado</th><th></th></tr></thead>
+                <tbody>
+                <tr th:each="a : ${accesos}">
+                    <td th:text="${a.usuario.nombre}"></td>
+                    <td th:text="${a.usuario.correo}"></td>
+                    <td>
+                        <span class="badge badge-ok" th:if="${a.rol.esAdministrador()}">Administrador</span>
+                        <span class="badge badge-mutes" th:unless="${a.rol.esAdministrador()}">Colaborador</span>
+                    </td>
+                    <td th:text="${a.fechaAsignada}"></td>
+                    <td sec:authorize="hasRole('ADMIN')">
+                        <form th:action="@{/cultivos/{id}/accesos/quitar(id=${cultivo.idCultivo})}"
+                              method="post" class="inline">
+                            <input type="hidden" name="correo" th:value="${a.usuario.correo}">
+                            <button class="btn claro chico" type="submit">Quitar</button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- RF-07: solo un administrador asigna o retira accesos -->
+        <div class="card" sec:authorize="hasRole('ADMIN')">
+            <h2>Asignar acceso</h2>
+            <p>El usuario debe estar registrado; el rol define sus permisos sobre este cultivo.</p>
+            <form th:action="@{/cultivos/{id}/accesos(id=${cultivo.idCultivo})}" method="post" class="form">
+                <label>Correo del usuario
+                    <input type="email" name="correo" required maxlength="150"
+                           placeholder="Ej. colaborador@agro.com">
+                </label>
+                <label>Rol dentro del cultivo
+                    <select name="rol" required>
+                        <option value="colaborador" selected>Colaborador (solo consulta)</option>
+                        <option value="administrador">Administrador (gestión completa)</option>
+                    </select>
+                </label>
+                <div>
+                    <button class="btn" type="submit">Asignar acceso</button>
+                </div>
+            </form>
+        </div>
+
+        <p><a style="color:#fff" th:href="@{/cultivos/{id}(id=${cultivo.idCultivo})}">Volver al detalle del cultivo</a></p>
+    </main>
+</div>
+</body>
+</html>
