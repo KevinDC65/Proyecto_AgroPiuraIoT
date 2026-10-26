@@ -38,4 +38,7 @@ build/
 ### Logs de la app ###
 logs/
 
+### Evidencias de demostración (capturas de la validación) ###
+evidencia/
+
 *.properties

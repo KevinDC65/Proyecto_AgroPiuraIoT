@@ -39,13 +39,18 @@ por umbrales configurables y una interfaz web sencilla para el agricultor.
 2. Copiar `src/main/resources/application.properties.example` a
    `src/main/resources/application.properties` y ajustar usuario/contraseña (el
    archivo real está fuera del repo por *.properties en .gitignore).
-3. `.\mvnw.cmd spring-boot:run` → http://localhost:8080
+3. RF-06 (clima): definir la variable de entorno `OPENWEATHER_API_KEY` con una
+   key gratuita de openweathermap.org — sin ella el clima se oculta de forma
+   elegante y el resto de la app funciona normal. El seeder crea el usuario
+   administrador de demostración `admin@agropiura.com` (clave definida en
+   `DataSeeder`), necesario para gestionar accesos (RF-07).
+4. `.\mvnw.cmd spring-boot:run` → http://localhost:8080
 
 ## Pruebas (TDD)
 
-`.\mvnw.cmd test` — 31 pruebas de servicio (usuarios, cultivos, umbrales sin
+`.\mvnw.cmd test` — 32 pruebas de servicio (usuarios, cultivos, umbrales sin
 duplicar, motor de alertas, histórico con rango de fechas, export Excel,
-clima de terceros con cache, accesos por rol).
+clima de terceros con cache, accesos por rol, seeder de administrador).
 
 ## Javadoc
 

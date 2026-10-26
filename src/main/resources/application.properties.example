@@ -13,7 +13,8 @@ spring.jpa.open-in-view=false
 
 # RF-06 — Clima de terceros (OpenWeatherMap). Sin API key el clima se
 # desactiva de forma elegante (no aparece en el dashboard, no hay errores).
-clima.openweather.api-key=
+# Recomendado: definir la clave como variable de entorno (nunca en el repo).
+clima.openweather.api-key=${OPENWEATHER_API_KEY:}
 # Base URL del proveedor (por defecto la API 2.5 oficial)
 # clima.openweather.url=https://api.openweathermap.org/data/2.5
 # Minutos de cache por ubicación (Guava) para respetar el límite del plan gratuito
