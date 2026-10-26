@@ -29,8 +29,8 @@ por umbrales configurables y una interfaz web sencilla para el agricultor.
 | RF-03 | Umbrales por cultivo y variable                 | ✔ |
 | RF-04 | Dashboard resumen en tiempo real                | ✔ |
 | RF-05 | Motor de alertas + notificaciones               | ✔ |
-| RF-06 | Clima de terceros                               | pendiente |
-| RF-07 | Roles admin/colaborador parcial (entidad+seguridad) | parcial |
+| RF-06 | Clima de terceros                               | ✔ |
+| RF-07 | Roles admin/colaborador por cultivo             | ✔ |
 | RF-08 | Histórico por cultivo, gráfica y Excel          | ✔ |
 
 ## Cómo ejecutar
@@ -43,8 +43,9 @@ por umbrales configurables y una interfaz web sencilla para el agricultor.
 
 ## Pruebas (TDD)
 
-`.\mvnw.cmd test` — 22 pruebas de servicio (usuarios, cultivos, umbrales sin
-duplicar, motor de alertas, histórico con rango de fechas, export Excel).
+`.\mvnw.cmd test` — 31 pruebas de servicio (usuarios, cultivos, umbrales sin
+duplicar, motor de alertas, histórico con rango de fechas, export Excel,
+clima de terceros con cache, accesos por rol).
 
 ## Javadoc
 
