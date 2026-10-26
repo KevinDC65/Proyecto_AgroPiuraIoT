@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{layout :: head('Histórico')}"></head>
+<head th:replace="~{components/layout :: head('Histórico')}"></head>
 <body class="app">
 <div class="shell">
     <aside th:replace="~{components/layout :: sidebar('historico')}"></aside>
@@ -14,8 +14,9 @@
                 <label>Desde <input type="date" name="desde" th:value="${desde}"></label>
                 <label>Hasta <input type="date" name="hasta" th:value="${hasta}"></label>
                 <button class="btn" type="submit">Aplicar</button>
-                <a class="btn claro" th:href="@{'/cultivos/' + ${cultivo.idCultivo} + '/historico'}">Limpiar</a>
-                <a class="btn claro" th:href="@{'/cultivos/' + ${cultivo.idCultivo} + '/historico/exportar.xlsx'} (desde=${desde}, hasta=${hasta})">Exportar Excel</a>
+                <a class="btn claro" th:href="@{/cultivos/{id}/historico(id=${cultivo.idCultivo})}">Limpiar</a>
+                <a class="btn claro"
+                   th:href="@{/cultivos/{id}/historico/exportar.xlsx(id=${cultivo.idCultivo}, desde=${desde}, hasta=${hasta})}">Exportar Excel</a>
             </form>
         </div>
 
@@ -28,28 +29,29 @@
 
         <div class="card">
             <h2>Tabla de lecturas</h2>
-            <p th:if="${#lists.isEmpty(lecturas)}">No hay lecturas registradas.</p>
-            <table class="tabla" th:unless="${#lists.isEmpty(lecturas)}">
-                <thead><tr><th>Fecha y hora</th><th>Variable</th><th>Valor</th><th>Unidad</th><th>Umbral</th><th>Estado</th></tr></thead>
+            <p th:if="${#lists.isEmpty(puntos)}">No hay lecturas registradas.</p>
+            <table class="tabla" th:unless="${#lists.isEmpty(puntos)}">
+                <thead><tr><th>Fecha y hora</th><th>Variable</th><th>Valor</th><th>Unidad</th><th>Estado</th></tr></thead>
                 <tbody>
-                <tr th:each="l : ${lecturas}">
-                    <td th:text="${l.fechaHora}"></td>
-                    <td th:text="${l.sensor.tipoSensor.obtenerNombre()}"></td>
-                    <td th:text="${l.valor}"></td>
-                    <td th:text="${l.sensor.tipoSensor.unidadMedida}"></td>
-                    <td th:if="${l.sensor.tipoSensor.obtenerNombre()}">-</td>
+                <tr th:each="p : ${puntos}">
+                    <td th:text="${p.fechaHora}"></td>
+                    <td th:text="${p.variable}"></td>
+                    <td th:text="${p.valor}"></td>
+                    <td th:text="${p.unidad}"></td>
                     <td>
-                        <span class="badge" th:classappend="${l.estaFueraDeRango(null)} ? 'badge-alerta' : 'badge-ok'"
-                            th:text="${l.estaFueraDeRango(null)} ? 'FUERA DE RANGO' : 'dentro de rango'}"></span>
+                        <span class="badge" th:classappend="${p.fueraDeRango} ? 'badge-alerta' : 'badge-ok'"
+                            th:text="${p.fueraDeRango} ? 'FUERA DE RANGO' : 'dentro de rango'"></span>
                     </td>
                 </tr>
                 </tbody>
             </table>
         </div>
 
-        <p><a style="color:#fff" th:href="@{'/cultivos/' + ${cultivo.idCultivo}}">Volver al detalle del cultivo</a></p>
+        <p><a style="color:#fff" th:href="@{/cultivos/{id}(id=${cultivo.idCultivo})}">Volver al detalle del cultivo</a></p>
     </main>
 </div>
+
+<script th:src="@{/js/chart.umd.min.js}" th:unless="${#lists.isEmpty(puntos)}"></script>
 
 <script th:unless="${#lists.isEmpty(puntos)}" th:inline="javascript">
 /*<![CDATA[*/
@@ -87,6 +89,5 @@ new Chart(document.getElementById('chartHistorico'), {
 /*]]>*/
 </script>
 
-<script th:href="@{/js/chart.umd.min.js}" th:unless="${#lists.isEmpty(puntos)}"></script>
 </body>
 </html>
