@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Logback (APF3 - uso de librerías de apoyo): niveles por paquete,
+     salida a consola y archivo rotativo para trazabilidad de la operación. -->
+<configuration>
+
+    <property name="PATRON"
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n"/>
+    <property name="CARPETA" value="logs"/>
+
+    <appender name="CONSOLA" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${PATRON}</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="ARCHIVO" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${CARPETA}/agropiura.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${CARPETA}/agropiura.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>14</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${PATRON}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Motor de alertas y configuración de umbrales: nivel DEBUG/FULL -->
+    <logger name="com.utp.AgroPiuraIoT.service" level="INFO"/>
+    <logger name="com.utp.AgroPiuraIoT.service.AlertasService" level="INFO"/>
+    <logger name="com.utp.AgroPiuraIoT.config.DataSeeder" level="INFO"/>
+
+    <logger name="org.springframework" level="WARN"/>
+    <logger name="org.hibernate" level="ERROR"/>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLA"/>
+        <appender-ref ref="ARCHIVO"/>
+    </root>
+</configuration>

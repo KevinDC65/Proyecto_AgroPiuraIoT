@@ -3,6 +3,7 @@ package com.utp.AgroPiuraIoT.service;
 import com.utp.AgroPiuraIoT.model.dto.RegistroRequest;
 import com.utp.AgroPiuraIoT.model.entity.Usuario;
 import com.utp.AgroPiuraIoT.repository.UsuarioRepository;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,18 +24,20 @@ public class UsuarioService {
         if (!request.clavesCoinciden()) {
             throw new IllegalArgumentException("Las contraseñas no coinciden");
         }
-        if (usuarios.existsByCorreo(request.correo())) {
+        String correo = StringUtils.lowerCase(StringUtils.trim(request.correo()));
+        if (usuarios.existsByCorreo(correo)) {
             throw new IllegalArgumentException("Ese correo ya está registrado");
         }
         Usuario usuario = new Usuario();
-        usuario.setNombre(request.nombre().trim());
-        usuario.setCorreo(request.correo().trim().toLowerCase());
+        usuario.setNombre(StringUtils.trimToNull(request.nombre()));
+        usuario.setCorreo(correo);
         usuario.setContrasena(passwordEncoder.encode(request.contrasena()));
         return usuarios.save(usuario);
     }
 
     @Transactional(readOnly = true)
     public Usuario buscarPorCorreo(String correo) {
-        return usuarios.findByCorreo(correo).orElse(null);
+        return usuarios.findByCorreo(StringUtils.lowerCase(StringUtils.trim(correo)))
+                .orElse(null);
     }
 }

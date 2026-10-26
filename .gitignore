@@ -35,4 +35,7 @@ build/
 ### Playwright MCP ###
 .playwright-mcp/
 
+### Logs de la app ###
+logs/
+
 *.properties

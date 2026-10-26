@@ -2,6 +2,7 @@ package com.utp.AgroPiuraIoT.service;
 
 import com.utp.AgroPiuraIoT.model.dto.UmbralForm;
 import com.utp.AgroPiuraIoT.model.entity.Cultivo;
+import com.utp.AgroPiuraIoT.model.entity.DispositivoIoT;
 import com.utp.AgroPiuraIoT.model.entity.TipoSensor;
 import com.utp.AgroPiuraIoT.model.entity.Umbral;
 import com.utp.AgroPiuraIoT.repository.CultivoRepository;
@@ -17,12 +18,14 @@ public class UmbralService {
     private final UmbralRepository umbrales;
     private final CultivoRepository cultivos;
     private final TipoSensorRepository tipos;
+    private final AlertasService alertasService;
 
     public UmbralService(UmbralRepository umbrales, CultivoRepository cultivos,
-                         TipoSensorRepository tipos) {
+                         TipoSensorRepository tipos, AlertasService alertasService) {
         this.umbrales = umbrales;
         this.cultivos = cultivos;
         this.tipos = tipos;
+        this.alertasService = alertasService;
     }
 
     @Transactional(readOnly = true)
@@ -33,6 +36,8 @@ public class UmbralService {
     /**
      * Guarda el umbral de una variable para el cultivo. Si ya existe un umbral
      * para el mismo tipo de sensor en el cultivo, lo actualiza en lugar de duplicarlo.
+     * Invalida el cache de umbrales del motor de alertas (Guava) para que las
+     * evaluaciones siguientes usen el valor recién guardado.
      */
     @Transactional
     public Umbral guardar(Integer idCultivo, UmbralForm form) {
@@ -50,7 +55,9 @@ public class UmbralService {
         umbral.setTipoSensor(tipoSensor);
         umbral.setValorMinimo(form.valorMinimo());
         umbral.setValorMaximo(form.valorMaximo());
-        return umbrales.save(umbral);
+        Umbral guardado = umbrales.save(umbral);
+        invalidarCache(cultivo);
+        return guardado;
     }
 
     @Transactional(readOnly = true)
@@ -71,6 +78,14 @@ public class UmbralService {
             throw new IllegalArgumentException("El umbral no pertenece al cultivo indicado");
         }
         umbrales.delete(umbral);
+        invalidarCache(umbral.getCultivo());
+    }
+
+    /** Deja en blanco el cache del motor de alertas para los dispositivos del cultivo. */
+    private void invalidarCache(Cultivo cultivo) {
+        for (DispositivoIoT dispositivo : cultivo.getDispositivos()) {
+            alertasService.invalidarCacheUmbrales(dispositivo.getIdDispositivo());
+        }
     }
 
     private void validar(UmbralForm form) {
