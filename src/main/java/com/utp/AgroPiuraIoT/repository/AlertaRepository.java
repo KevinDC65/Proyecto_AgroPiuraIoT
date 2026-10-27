@@ -9,4 +9,8 @@ public interface AlertaRepository extends JpaRepository<Alerta, Integer> {
     List<Alerta> findByUmbralCultivoIdCultivoOrderByFechaAlertaDesc(Integer idCultivo);
 
     List<Alerta> findAllByOrderByFechaAlertaDesc();
+
+    long countByAtendidaFalse();
+
+    long countByUmbralCultivoIdCultivoAndAtendidaFalse(Integer idCultivo);
 }

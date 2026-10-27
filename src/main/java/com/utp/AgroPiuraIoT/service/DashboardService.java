@@ -55,19 +55,25 @@ public class DashboardService {
             }
             String estado = "SIN_DATOS";
             if (humedad != null || temperatura != null) {
-                boolean conAlertas = !alertas
-                        .findByUmbralCultivoIdCultivoOrderByFechaAlertaDesc(cultivo.getIdCultivo())
-                        .isEmpty();
+                boolean conAlertas = alertas
+                    .countByUmbralCultivoIdCultivoAndAtendidaFalse(cultivo.getIdCultivo()) > 0;
                 estado = conAlertas ? "ALERTA" : "NORMAL";
             }
-            estados.add(new CultivoEstado(cultivo.getNombre(), humedad, temperatura, estado));
+            estados.add(new CultivoEstado(
+                cultivo.getIdCultivo(),
+                cultivo.getNombre(),
+                humedad,
+                temperatura,
+                estado,
+                cultivo.getLatitud(),
+                cultivo.getLongitud()));
             LocalDateTime fechaCultivo = ultimaFecha(cultivo);
             if (fechaCultivo != null && (ultimaFecha == null || fechaCultivo.isAfter(ultimaFecha))) {
                 ultimaFecha = fechaCultivo;
             }
         }
 
-        return new DashboardResumen(todos.size(), alertas.count(),
+        return new DashboardResumen(todos.size(), alertas.countByAtendidaFalse(),
                 promedio(humedades), promedio(temperaturas),
                 textoSincronizacion(ultimaFecha), estados);
     }

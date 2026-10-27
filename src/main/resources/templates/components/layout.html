@@ -23,6 +23,7 @@
     <a class="nav-item" th:classappend="${activo} == 'umbrales' ? ' activo'" th:href="@{/umbrales}">◔ Umbrales</a>
     <a class="nav-item" th:classappend="${activo} == 'alertas' ? ' activo'" th:href="@{/alertas}">⚠ Alertas</a>
     <a class="nav-item" th:classappend="${activo} == 'historico' ? ' activo'" th:href="@{/historico}">📈 Histórico</a>
+    <a class="nav-item" th:classappend="${activo} == 'mapa' ? ' activo'" th:href="@{/mapa}">🗺 Mapa</a>
     <span class="nav-item pronto">💳 Pagos<span class="sello-pronto">Pronto</span></span>
     <div sec:authorize="isAuthenticated()" style="margin-top:1rem">
         <form th:action="@{/logout}" method="post">

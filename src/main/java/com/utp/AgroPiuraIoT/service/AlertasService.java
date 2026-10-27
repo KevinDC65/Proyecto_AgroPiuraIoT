@@ -113,10 +113,27 @@ public class AlertasService {
         return alertas.findAllByOrderByFechaAlertaDesc();
     }
 
+    @Transactional
+    public void marcarAtendida(Integer idAlerta) {
+        Alerta alerta = alertas.findById(idAlerta)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Alerta no encontrada: " + idAlerta));
+
+        alerta.marcarAtendida();
+        alertas.save(alerta);
+
+        log.info("Alerta {} marcada como atendida", idAlerta);
+    }
+
     /** Notificaciones no leídas del usuario indicado (por correo). */
     @Transactional(readOnly = true)
     public List<NotificacionUsuario> notificacionesDe(String correo) {
         return notificaciones.findByUsuarioCorreoAndLeidoFalseOrderByIdNotificacionDesc(correo);
+    }
+
+    @Transactional(readOnly = true)
+    public long contarNoLeidas(String correo) {
+        return notificaciones.countByUsuarioCorreoAndLeidoFalse(correo);
     }
 
     /** Marca una notificación como leída, verificando que pertenezca al usuario. */

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{components/layout :: head('Mapa')}"></head>
+
+<body class="app">
+    <div class="shell">
+        <aside th:replace="~{components/layout :: sidebar('mapa')}"></aside>
+        <main class="principal">
+            <span class="migas">Inicio &gt; Mapa</span>
+
+            <div class="fila-titulo">
+                <h1>Mapa de cultivos</h1>
+                <div class="mapa-acciones">
+                    <span class="sincro" th:text="'Última sincronización: ' + ${resumen.ultimaSincronizacion}"></span>
+                    <button type="button" class="btn claro chico" onclick="location.reload()">Actualizar</button>
+                </div>
+            </div>
+
+            <div class="mapa-layout">
+                <div class="card mapa-card">
+                    <div id="mapa" class="mapa" aria-label="Mapa de cultivos"></div>
+                </div>
+
+                <aside class="card mapa-panel">
+                    <div class="mapa-panel-cabecera">
+                        <h2>Cultivos</h2>
+                        <span class="badge badge-mutes" th:text="${resumen.cultivosActivos} + ' cultivos'"></span>
+                    </div>
+
+                    <p class="mapa-vacio" th:if="${#lists.isEmpty(resumen.cultivos)}">
+                        No hay cultivos registrados.
+                    </p>
+
+                    <a class="mapa-item" th:each="c : ${resumen.cultivos}"
+                        th:href="@{/cultivos/{id}(id=${c.idCultivo})}">
+
+                        <span class="mapa-punto" th:classappend="${#strings.toLowerCase(c.estado)}"></span>
+
+                        <div class="mapa-item-info">
+                            <strong th:text="${c.nombre}"></strong>
+
+                            <small th:if="${c.humedad != null or c.temperatura != null}">
+                                <span th:text="'Humedad ' + (${c.humedad} ?: '-') + '%'"></span> ·
+                                <span th:text="'Temp. ' + (${c.temperatura} ?: '-') + ' °C'"></span>
+                            </small>
+
+                            <small th:if="${c.humedad == null and c.temperatura == null}">
+                                Sin lecturas
+                            </small>
+                        </div>
+
+                        <span class="badge badge-alerta" th:if="${c.estado == 'ALERTA'}">Alerta</span>
+                        <span class="badge badge-ok" th:if="${c.estado == 'NORMAL'}">Normal</span>
+                        <span class="badge badge-mutes" th:if="${c.estado == 'SIN_DATOS'}">Sin datos</span>
+                    </a>
+
+                    <a class="btn claro chico mapa-panel-btn" th:href="@{/cultivos}">
+                        Ver todos los cultivos
+                    </a>
+                </aside>
+            </div>
+
+            <p th:if="${#lists.isEmpty(resumen.cultivos)}">
+                Registra un cultivo con latitud y longitud para verlo en el mapa.
+            </p>
+        </main>
+    </div>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        const cultivos = /*[[${resumen.cultivos}]]*/[];
+        const mapa = L.map('mapa').setView([-5.194, -80.633], 9);
+        const grupo = L.featureGroup().addTo(mapa);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap'
+        }).addTo(mapa);
+
+        const colores = {
+            ALERTA: '#b3402a',
+            NORMAL: '#2e7d32',
+            SIN_DATOS: '#6b8480'
+        };
+
+        cultivos.forEach(c => {
+            if (c.latitud == null || c.longitud == null) return;
+
+            const color = colores[c.estado] || '#6b8480';
+            const icono = L.divIcon({
+                className: 'marcador-cultivo',
+                html: `<span style="background:${color}"></span>`,
+                iconSize: [18, 18],
+                iconAnchor: [9, 9]
+            });
+
+            L.marker([c.latitud, c.longitud], { icon: icono })
+                .addTo(grupo)
+                .bindPopup(`
+                <strong>${c.nombre}</strong><br>
+                Humedad: ${c.humedad ?? '-'}%<br>
+                Temperatura: ${c.temperatura ?? '-'} °C<br>
+                <a href="/cultivos/${c.idCultivo}">Ver detalle</a>
+            `);
+        });
+
+        if (grupo.getLayers().length === 1) {
+            mapa.setView(grupo.getLayers()[0].getLatLng(), 13);
+        } else if (grupo.getLayers().length > 1) {
+            mapa.fitBounds(grupo.getBounds().pad(0.2), { maxZoom: 14 });
+        }
+
+        L.control.scale({ imperial: false }).addTo(mapa);
+
+        const leyenda = L.control({ position: 'bottomright' });
+        leyenda.onAdd = () => {
+            const div = L.DomUtil.create('div', 'leyenda-mapa');
+            div.innerHTML = `
+            <span><i style="background:#2e7d32"></i> Normal</span>
+            <span><i style="background:#b3402a"></i> Alerta</span>
+            <span><i style="background:#6b8480"></i> Sin datos</span>`;
+            return div;
+        };
+        leyenda.addTo(mapa);
+        /*]]>*/
+    </script>
+</body>
+
+</html>

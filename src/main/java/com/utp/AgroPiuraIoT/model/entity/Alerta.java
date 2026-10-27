@@ -34,6 +34,9 @@ public class Alerta {
     @Column(name = "fecha_alerta")
     private LocalDateTime fechaAlerta;
 
+    @Column(nullable = false)
+    private boolean atendida = false;   
+
     @PrePersist
     protected void prePersist() {
         if (fechaAlerta == null) {
@@ -91,5 +94,17 @@ public class Alerta {
 
     public void setFechaAlerta(LocalDateTime fechaAlerta) {
         this.fechaAlerta = fechaAlerta;
+    }
+
+        public void marcarAtendida() {
+        this.atendida = true;
+    }
+
+    public boolean isAtendida() {
+        return atendida;
+    }
+
+    public void setAtendida(boolean atendida) {
+        this.atendida = atendida;
     }
 }

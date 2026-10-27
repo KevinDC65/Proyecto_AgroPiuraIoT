@@ -1,93 +1,146 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
+
 <head th:replace="~{components/layout :: head('Histórico')}"></head>
+
 <body class="app">
-<div class="shell">
-    <aside th:replace="~{components/layout :: sidebar('historico')}"></aside>
-    <main class="principal">
-        <span class="migas">Inicio > Cultivos > <span th:text="${cultivo.nombre}"></span> > Histórico</span>
-        <h1 th:text="'Histórico de ' + ${cultivo.nombre}"></h1>
+    <div class="shell">
+        <aside th:replace="~{components/layout :: sidebar('historico')}"></aside>
+        <main class="principal">
+            <span class="migas">Inicio > Cultivos > <span th:text="${cultivo.nombre}"></span> > Histórico</span>
+            <h1 th:text="'Histórico de ' + ${cultivo.nombre}"></h1>
 
-        <div class="card" style="margin-bottom:1rem">
-            <h2>Filtrar</h2>
-            <form method="get" class="form inline" style="gap:0.8rem">
-                <label>Desde <input type="date" name="desde" th:value="${desde}"></label>
-                <label>Hasta <input type="date" name="hasta" th:value="${hasta}"></label>
-                <button class="btn" type="submit">Aplicar</button>
-                <a class="btn claro" th:href="@{/cultivos/{id}/historico(id=${cultivo.idCultivo})}">Limpiar</a>
-                <a class="btn claro"
-                   th:href="@{/cultivos/{id}/historico/exportar.xlsx(id=${cultivo.idCultivo}, desde=${desde}, hasta=${hasta})}">Exportar Excel</a>
-            </form>
-        </div>
+            <div class="card" style="margin-bottom:1rem">
+                <h2>Filtrar</h2>
+                <form method="get" class="form inline" style="gap:0.8rem">
+                    <label>Desde <input type="date" name="desde" th:value="${desde}"></label>
+                    <label>Hasta <input type="date" name="hasta" th:value="${hasta}"></label>
+                    <button class="btn" type="submit">Aplicar</button>
+                    <a class="btn claro" th:href="@{/cultivos/{id}/historico(id=${cultivo.idCultivo})}">Limpiar</a>
+                    <a class="btn claro"
+                        th:href="@{/cultivos/{id}/historico/exportar.xlsx(id=${cultivo.idCultivo}, desde=${desde}, hasta=${hasta})}">Exportar
+                        Excel</a>
+                </form>
+            </div>
 
-        <div class="card" style="height:400px; position:relative">
-            <h2>Serie temporal</h2>
-            <p th:if="${#lists.isEmpty(puntos)}">Sin lecturas en el rango seleccionado.</p>
-            <canvas th:unless="${#lists.isEmpty(puntos)}" id="chartHistorico"
-                    style="width:100%; height:340px"></canvas>
-        </div>
+            <h2 th:if="${not #lists.isEmpty(resumen)}" style="color:#fff; margin:0.5rem 0 0.75rem;">Resumen del rango
+            </h2>
 
-        <div class="card">
-            <h2>Tabla de lecturas</h2>
-            <p th:if="${#lists.isEmpty(puntos)}">No hay lecturas registradas.</p>
-            <table class="tabla" th:unless="${#lists.isEmpty(puntos)}">
-                <thead><tr><th>Fecha y hora</th><th>Variable</th><th>Valor</th><th>Unidad</th><th>Estado</th></tr></thead>
-                <tbody>
-                <tr th:each="p : ${puntos}">
-                    <td th:text="${p.fechaHora}"></td>
-                    <td th:text="${p.variable}"></td>
-                    <td th:text="${p.valor}"></td>
-                    <td th:text="${p.unidad}"></td>
-                    <td>
-                        <span class="badge" th:classappend="${p.fueraDeRango} ? 'badge-alerta' : 'badge-ok'"
-                            th:text="${p.fueraDeRango} ? 'FUERA DE RANGO' : 'dentro de rango'"></span>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
+            <section class="kpis auto" th:if="${not #lists.isEmpty(resumen)}">
+                <article class="card kpi" th:each="r : ${resumen}">
+                    <small th:text="${#strings.capitalize(#strings.replace(r.variable, '_', ' '))}"></small>
 
-        <p><a style="color:#fff" th:href="@{/cultivos/{id}(id=${cultivo.idCultivo})}">Volver al detalle del cultivo</a></p>
-    </main>
-</div>
+                    <strong th:text="${r.promedio != null
+                ? #numbers.formatDecimal(r.promedio, 1, 2) + ' ' + r.unidad
+                : '-'}"></strong>
 
-<script th:src="@{/js/chart.umd.min.js}" th:unless="${#lists.isEmpty(puntos)}"></script>
+                    <small>
+                        Mín.
+                        <span th:text="${r.minimo != null
+                    ? #numbers.formatDecimal(r.minimo, 1, 2)
+                    : '-'}"></span>
+                        · Máx.
+                        <span th:text="${r.maximo != null
+                    ? #numbers.formatDecimal(r.maximo, 1, 2)
+                    : '-'}"></span>
+                    </small>
 
-<script th:unless="${#lists.isEmpty(puntos)}" th:inline="javascript">
-/*<![CDATA[*/
-const datos = /*[[${puntos}]]*/ [];
-const etiquetas = datos.map(p => p.fechaHora);
-const series = {};
+                    <small th:text="${r.total} + ' lecturas · ' + ${r.fueraDeRango} + ' fuera de rango'"></small>
+                </article>
+            </section>
 
-datos.forEach(p => {
-    if (!series[p.variable]) series[p.variable] = [];
-    series[p.variable].push(p.valor);
-});
+            <div class="card card-grafica">
+                <h2>Serie temporal</h2>
+                <p th:if="${#lists.isEmpty(puntos)}">Sin lecturas en el rango seleccionado.</p>
 
-const colores = ['#0d9488', '#ea580c', '#7c3aed', '#e11d48'];
-let i = 0;
-new Chart(document.getElementById('chartHistorico'), {
-    type: 'line',
-    data: {
-        labels: etiquetas,
-        datasets: Object.entries(series).map(([nombre, valores]) => ({
-            label: nombre,
-            data: valores,
-            borderColor: colores[i++ % colores.length],
-            backgroundColor: colores[i % colores.length] + '33',
-            tension: 0.2,
-            fill: true
-        }))
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: true } },
-        scales: { x: { ticks: { maxRotation: 45, minRotation: 45 } } }
-    }
-});
-/*]]>*/
-</script>
+                <div class="chart-contenedor" th:unless="${#lists.isEmpty(puntos)}">
+                    <canvas id="chartHistorico"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Tabla de lecturas</h2>
+                <p th:if="${#lists.isEmpty(puntos)}">No hay lecturas registradas.</p>
+                <table class="tabla" th:unless="${#lists.isEmpty(puntos)}">
+                    <thead>
+                        <tr>
+                            <th>Fecha y hora</th>
+                            <th>Variable</th>
+                            <th>Valor</th>
+                            <th>Unidad</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="p : ${puntos}">
+                            <td th:text="${p.fechaHora}"></td>
+                            <td th:text="${p.variable}"></td>
+                            <td th:text="${p.valor}"></td>
+                            <td th:text="${p.unidad}"></td>
+                            <td>
+                                <span class="badge" th:classappend="${p.fueraDeRango} ? 'badge-alerta' : 'badge-ok'"
+                                    th:text="${p.fueraDeRango} ? 'FUERA DE RANGO' : 'dentro de rango'"></span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <p><a style="color:#fff" th:href="@{/cultivos/{id}(id=${cultivo.idCultivo})}">Volver al detalle del
+                    cultivo</a></p>
+        </main>
+    </div>
+
+    <script th:src="@{/js/chart.umd.min.js}" th:unless="${#lists.isEmpty(puntos)}"></script>
+
+    <script th:unless="${#lists.isEmpty(puntos)}" th:inline="javascript">
+        /*<![CDATA[*/
+        const datos = /*[[${puntos}]]*/[];
+        const etiquetas = datos.map(p => p.fechaHora);
+        const series = {};
+
+        datos.forEach(p => {
+            if (!series[p.variable]) series[p.variable] = [];
+            series[p.variable].push(p.valor);
+        });
+
+        const colores = ['#0d9488', '#ea580c', '#7c3aed', '#e11d48'];
+        let i = 0;
+        new Chart(document.getElementById('chartHistorico'), {
+            type: 'line',
+            data: {
+                labels: etiquetas,
+                datasets: Object.entries(series).map(([nombre, valores]) => ({
+                    label: nombre,
+                    data: valores,
+                    borderColor: colores[i++ % colores.length],
+                    backgroundColor: colores[i % colores.length] + '33',
+                    tension: 0.2,
+                    fill: true
+                }))
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: {
+                    padding: { bottom: 8 }
+                },
+                plugins: { legend: { display: true } },
+                scales: {
+                    x: {
+                        ticks: {
+                            autoSkip: true,
+                            maxTicksLimit: 8,
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    }
+                }
+            }
+        });
+        /*]]>*/
+    </script>
 
 </body>
+
 </html>

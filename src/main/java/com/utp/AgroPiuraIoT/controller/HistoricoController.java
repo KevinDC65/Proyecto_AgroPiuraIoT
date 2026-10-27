@@ -26,7 +26,9 @@ public class HistoricoController {
         this.cultivos = cultivos;
     }
 
-    /** Punto de entrada del menú: abre el histórico del primer cultivo registrado. */
+    /**
+     * Punto de entrada del menú: abre el histórico del primer cultivo registrado.
+     */
     @GetMapping("/historico")
     String inicio() {
         List<Cultivo> todos = cultivos.listar();
@@ -37,19 +39,19 @@ public class HistoricoController {
 
     @GetMapping("/cultivos/{idCultivo}/historico")
     String vista(@PathVariable Integer idCultivo,
-                 @RequestParam(required = false) LocalDate desde,
-                 @RequestParam(required = false) LocalDate hasta,
-                 Model model) {
+            @RequestParam(required = false) LocalDate desde,
+            @RequestParam(required = false) LocalDate hasta,
+            Model model) {
         model.addAttribute("cultivo", cultivos.buscar(idCultivo));
-        model.addAttribute("lecturas", historico.consultar(idCultivo, desde, hasta));
         model.addAttribute("puntos", historico.puntos(idCultivo, desde, hasta));
+        model.addAttribute("resumen", historico.resumen(idCultivo, desde, hasta));
         return "historico/lista";
     }
 
     @GetMapping("/cultivos/{idCultivo}/historico/exportar.xlsx")
     ResponseEntity<byte[]> exportar(@PathVariable Integer idCultivo,
-                                    @RequestParam(required = false) LocalDate desde,
-                                    @RequestParam(required = false) LocalDate hasta) throws Exception {
+            @RequestParam(required = false) LocalDate desde,
+            @RequestParam(required = false) LocalDate hasta) throws Exception {
         byte[] archivo = historico.exportarExcel(idCultivo, desde, hasta);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION,

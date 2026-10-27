@@ -6,6 +6,7 @@
     <aside th:replace="~{components/layout :: sidebar('cultivos')}"></aside>
     <main class="principal">
         <span class="migas">Inicio &gt; Cultivos &gt; Detalle</span>
+        <p class="alerta exito" th:if="${mensaje}" th:text="${mensaje}"></p>
         <div class="fila-titulo">
             <h1 th:text="${cultivo.nombre}"></h1>
             <div>
@@ -13,6 +14,10 @@
                 <form th:action="@{/cultivos/{id}/eliminar(id=${cultivo.idCultivo})}" method="post" class="inline"
                       onsubmit="return confirm('¿Eliminar este cultivo?');">
                     <button class="btn claro chico" type="submit">Eliminar</button>
+                </form>
+                <form th:action="@{/cultivos/{id}/simular(id=${cultivo.idCultivo})}"
+                    method="post" class="inline">
+                    <button class="btn chico" type="submit">Simular lectura</button>
                 </form>
             </div>
         </div>

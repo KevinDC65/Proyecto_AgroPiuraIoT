@@ -12,9 +12,12 @@ public record DashboardResumen(
         List<CultivoEstado> cultivos) {
 
     public record CultivoEstado(
-            String nombre,
-            BigDecimal humedad,
-            BigDecimal temperatura,
-            String estado) {
-    }
+        Integer idCultivo,
+        String nombre,
+        BigDecimal humedad,
+        BigDecimal temperatura,
+        String estado,
+        BigDecimal latitud,
+        BigDecimal longitud) {
+        }
 }

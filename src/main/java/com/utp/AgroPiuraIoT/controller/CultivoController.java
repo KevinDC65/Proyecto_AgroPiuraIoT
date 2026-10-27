@@ -3,6 +3,7 @@ package com.utp.AgroPiuraIoT.controller;
 import com.utp.AgroPiuraIoT.model.dto.CultivoForm;
 import com.utp.AgroPiuraIoT.model.entity.Cultivo;
 import com.utp.AgroPiuraIoT.service.CultivoService;
+import com.utp.AgroPiuraIoT.service.SimuladorService;
 import com.utp.AgroPiuraIoT.util.excel.CultivoExcelExporter;
 import jakarta.validation.Valid;
 import java.math.BigDecimal;
@@ -19,16 +20,19 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/cultivos")
 public class CultivoController {
 
     private final CultivoService cultivos;
+    private final SimuladorService simulador;
 
-    public CultivoController(CultivoService cultivos) {
+    public CultivoController(CultivoService cultivos, SimuladorService simulador) {
         this.cultivos = cultivos;
-    }
+        this.simulador = simulador;
+    }   
 
     @GetMapping
     String lista(Model model) {
@@ -114,5 +118,12 @@ public class CultivoController {
                 .contentType(MediaType.parseMediaType(
                         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(archivo);
+    }
+
+        @PostMapping("/{id}/simular")
+    String simular(@PathVariable Integer id, RedirectAttributes flash) {
+        int total = simulador.simular(id);
+        flash.addFlashAttribute("mensaje", total + " lecturas simuladas");
+        return "redirect:/cultivos/" + id;
     }
 }

@@ -11,4 +11,6 @@ public interface NotificacionUsuarioRepository extends JpaRepository<Notificacio
     List<NotificacionUsuario> findByAlertaIdAlerta(Integer idAlerta);
 
     List<NotificacionUsuario> findByUsuarioCorreoAndLeidoFalseOrderByIdNotificacionDesc(String correo);
+
+    long countByUsuarioCorreoAndLeidoFalse(String correo);
 }

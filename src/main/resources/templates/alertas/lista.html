@@ -8,13 +8,15 @@
         <span class="migas">Inicio &gt; Alertas</span>
         <h1>Alertas</h1>
 
+        <p class="alerta exito" th:if="${mensaje}" th:text="${mensaje}"></p>
+
         <div class="card">
             <h2>Mis notificaciones sin leer</h2>
             <p th:if="${#lists.isEmpty(notificaciones)}">No tienes notificaciones pendientes.</p>
             <div th:unless="${#lists.isEmpty(notificaciones)}">
                 <div class="alerta error" th:each="n : ${notificaciones}"
                      style="margin-bottom:0.5rem; display:flex; align-items:center; gap:0.8rem;">
-                    <span th:text="${n.alerta.mensaje}"></span>
+                    <span th:text="${n.alerta.umbral.cultivo.nombre} + ': ' + ${n.alerta.mensaje}"></span>
                     <form th:action="@{/alertas/{id}/leida(id=${n.idNotificacion})}" method="post" class="inline">
                         <button class="btn claro chico" type="submit">Marcar como leída</button>
                     </form>
@@ -26,17 +28,38 @@
             <h2>Historial de alertas</h2>
             <p th:if="${#lists.isEmpty(alertas)}">Aún no se han generado alertas en el sistema.</p>
             <table class="tabla" th:unless="${#lists.isEmpty(alertas)}">
-                <thead><tr><th>Fecha</th><th>Cultivo</th><th>Variable</th><th>Mensaje</th></tr></thead>
+                <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Cultivo</th>
+                    <th>Variable</th>
+                    <th>Mensaje</th>
+                    <th>Estado</th>
+                    <th>Acción</th>
+                </tr>
+                </thead>
                 <tbody>
                 <tr th:each="a : ${alertas}">
                     <td th:text="${a.fechaAlerta}"></td>
                     <td>
-                        <a style="color:#fff"
+                        <a style="color: var(--teal-800); font-weight: 600;"
                            th:href="@{/cultivos/{id}/umbrales(id=${a.umbral.cultivo.idCultivo})}"
                            th:text="${a.umbral.cultivo.nombre}"></a>
                     </td>
                     <td th:text="${a.umbral.tipoSensor.obtenerNombre()}"></td>
                     <td th:text="${a.mensaje}"></td>
+                    <td>
+                        <span class="badge badge-alerta" th:if="${!a.atendida}">Pendiente</span>
+                        <span class="badge badge-ok" th:if="${a.atendida}">Atendida</span>
+                    </td>
+                    <td>
+                        <form th:if="${!a.atendida}"
+                              th:action="@{/alertas/{id}/atender(id=${a.idAlerta})}"
+                              method="post" class="inline">
+                            <button class="btn claro chico" type="submit">Marcar como atendida</button>
+                        </form>
+                        <span th:if="${a.atendida}" class="suave">—</span>
+                    </td>
                 </tr>
                 </tbody>
             </table>

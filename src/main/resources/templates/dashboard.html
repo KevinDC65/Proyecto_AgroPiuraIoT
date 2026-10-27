@@ -12,7 +12,7 @@
         <h1>Resumen de hoy</h1>
         <section class="kpis">
             <article class="card kpi"><small>Cultivos activos</small><strong th:text="${resumen.cultivosActivos}"></strong></article>
-            <article class="card kpi destacado"><small>Alertas activas</small><strong th:text="${resumen.alertasActivas}"></strong></article>
+            <article class="card kpi destacado"><small>Alertas pendientes</small><strong th:text="${resumen.alertasActivas}"></strong></article>
             <article class="card kpi"><small>Humedad promedio</small><strong th:text="${resumen.humedadPromedio} != null ? ${resumen.humedadPromedio} + '%' : '-'"></strong></article>
             <article class="card kpi"><small>Temp. promedio</small><strong th:text="${resumen.temperaturaPromedio} != null ? ${resumen.temperaturaPromedio} + '°C' : '-'"></strong></article>
         </section>

@@ -97,4 +97,22 @@ class HistoricoServiceTest {
 
         assertTrue(archivo.length > 0);
     }
+
+    @Test
+    void calculaResumenDelRango() {
+        Cultivo cultivo = prepararConLecturas();
+
+        var resumen = historico.resumen(cultivo.getIdCultivo(),
+                LocalDate.now().minusDays(7), LocalDate.now());
+
+        assertEquals(1, resumen.size());
+
+        var humedad = resumen.get(0);
+        assertEquals("humedad_suelo", humedad.variable());
+        assertEquals(0, humedad.minimo().compareTo(new BigDecimal("30")));
+        assertEquals(0, humedad.maximo().compareTo(new BigDecimal("60")));
+        assertEquals(0, humedad.promedio().compareTo(new BigDecimal("45")));
+        assertEquals(3L, humedad.total());
+        assertEquals(0L, humedad.fueraDeRango());
+    }
 }

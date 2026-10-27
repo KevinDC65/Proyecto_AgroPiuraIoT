@@ -8,6 +8,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 public class AlertaController {
@@ -34,6 +35,13 @@ public class AlertaController {
         if (principal != null) {
             alertas.marcarLeida(idNotificacion, principal.getName());
         }
+        return "redirect:/alertas";
+    }
+
+    @PostMapping("/alertas/{idAlerta}/atender")
+    String marcarAtendida(@PathVariable Integer idAlerta, RedirectAttributes redirect) {
+        alertas.marcarAtendida(idAlerta);
+        redirect.addFlashAttribute("mensaje", "Alerta marcada como atendida.");
         return "redirect:/alertas";
     }
 }
