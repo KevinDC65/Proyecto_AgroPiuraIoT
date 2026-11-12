@@ -6,6 +6,7 @@ import com.utp.AgroPiuraIoT.repository.UsuarioCultivoRepository;
 import com.utp.AgroPiuraIoT.repository.UsuarioRepository;
 import java.util.HashSet;
 import java.util.Set;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
@@ -29,14 +30,20 @@ public class AppUserDetailsService implements UserDetailsService {
     @Override
     @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String correo) throws UsernameNotFoundException {
+        if (StringUtils.isBlank(correo)) {
+            throw new UsernameNotFoundException("El correo no puede estar vacío");
+        }
         Usuario usuario = usuarios.findByCorreo(correo.trim().toLowerCase())
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + correo));
         Set<GrantedAuthority> autoridades = new HashSet<>();
         autoridades.add(new SimpleGrantedAuthority("ROLE_USER"));
         for (UsuarioCultivo acceso : accesos.findByUsuarioIdUsuario(usuario.getIdUsuario())) {
-            if (acceso.getRol() != null && acceso.getRol().esAdministrador()) {
-                autoridades.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
-                break;
+            if (acceso.getRol() != null) {
+                if (acceso.getRol().esAdministrador()) {
+                    autoridades.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
+                } else if (acceso.getRol().esColaborador()) {
+                    autoridades.add(new SimpleGrantedAuthority("ROLE_COLABORADOR"));
+                }
             }
         }
         boolean activo = "activo".equalsIgnoreCase(usuario.getEstado());

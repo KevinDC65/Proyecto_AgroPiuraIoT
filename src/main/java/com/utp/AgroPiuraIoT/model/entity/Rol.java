@@ -23,6 +23,10 @@ public class Rol {
         return "administrador".equalsIgnoreCase(nombreRol);
     }
 
+    public boolean esColaborador() {
+        return "colaborador".equalsIgnoreCase(nombreRol);
+    }
+
     public Integer getIdRol() {
         return idRol;
     }

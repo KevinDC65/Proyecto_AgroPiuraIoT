@@ -73,9 +73,15 @@ public class DashboardService {
             }
         }
 
+        long dispositivosActivos = todos.stream()
+                .filter(c -> c.getDispositivos() != null)
+                .flatMap(c -> c.getDispositivos().stream())
+                .filter(d -> d != null && d.estaActivo())
+                .count();
+
         return new DashboardResumen(todos.size(), alertas.countByAtendidaFalse(),
                 promedio(humedades), promedio(temperaturas),
-                textoSincronizacion(ultimaFecha), estados);
+                textoSincronizacion(ultimaFecha), estados, dispositivosActivos);
     }
 
     private LocalDateTime ultimaFecha(Cultivo cultivo) {

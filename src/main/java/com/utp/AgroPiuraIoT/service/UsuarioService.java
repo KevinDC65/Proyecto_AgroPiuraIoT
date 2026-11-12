@@ -21,6 +21,18 @@ public class UsuarioService {
 
     @Transactional
     public Usuario registrar(RegistroRequest request) {
+        if (request == null) {
+            throw new IllegalArgumentException("Los datos de registro son obligatorios");
+        }
+        if (StringUtils.isBlank(request.nombre())) {
+            throw new IllegalArgumentException("El nombre es obligatorio");
+        }
+        if (StringUtils.isBlank(request.correo())) {
+            throw new IllegalArgumentException("El correo es obligatorio");
+        }
+        if (StringUtils.isBlank(request.contrasena())) {
+            throw new IllegalArgumentException("La contraseña es obligatoria");
+        }
         if (!request.clavesCoinciden()) {
             throw new IllegalArgumentException("Las contraseñas no coinciden");
         }
@@ -37,6 +49,9 @@ public class UsuarioService {
 
     @Transactional(readOnly = true)
     public Usuario buscarPorCorreo(String correo) {
+        if (StringUtils.isBlank(correo)) {
+            return null;
+        }
         return usuarios.findByCorreo(StringUtils.lowerCase(StringUtils.trim(correo)))
                 .orElse(null);
     }

@@ -2,6 +2,7 @@ package com.utp.AgroPiuraIoT.controller;
 
 import com.utp.AgroPiuraIoT.model.dto.CultivoForm;
 import com.utp.AgroPiuraIoT.model.entity.Cultivo;
+import com.utp.AgroPiuraIoT.model.entity.DispositivoIoT;
 import com.utp.AgroPiuraIoT.service.CultivoService;
 import com.utp.AgroPiuraIoT.service.SimuladorService;
 import com.utp.AgroPiuraIoT.util.excel.CultivoExcelExporter;
@@ -51,13 +52,23 @@ public class CultivoController {
     }
 
     @PostMapping
-    String crear(@Valid @ModelAttribute("form") CultivoForm form, BindingResult errores, Model model) {
+    String crear(@Valid @ModelAttribute("form") CultivoForm form,
+                 BindingResult errores,
+                 Model model,
+                 RedirectAttributes flash) {
         if (errores.hasErrors()) {
             model.addAttribute("cultivoId", null);
             return "cultivos/form";
         }
-        Cultivo creado = cultivos.guardar(form);
-        return "redirect:/cultivos/" + creado.getIdCultivo();
+        try {
+            Cultivo creado = cultivos.guardar(form);
+            flash.addFlashAttribute("mensaje", "Cultivo registrado exitosamente");
+            return "redirect:/cultivos/" + creado.getIdCultivo();
+        } catch (IllegalArgumentException ex) {
+            model.addAttribute("cultivoId", null);
+            model.addAttribute("error", ex.getMessage());
+            return "cultivos/form";
+        }
     }
 
     @GetMapping("/{id:\\d+}")
@@ -81,31 +92,69 @@ public class CultivoController {
     @PostMapping("/{id}/editar")
     String actualizar(@PathVariable Integer id,
                       @Valid @ModelAttribute("form") CultivoForm form,
-                      BindingResult errores, Model model) {
+                      BindingResult errores,
+                      Model model,
+                      RedirectAttributes flash) {
         if (errores.hasErrors()) {
             model.addAttribute("cultivoId", id);
             return "cultivos/form";
         }
-        cultivos.actualizar(id, form);
-        return "redirect:/cultivos/" + id;
+        try {
+            cultivos.actualizar(id, form);
+            flash.addFlashAttribute("mensaje", "Cultivo actualizado exitosamente");
+            return "redirect:/cultivos/" + id;
+        } catch (IllegalArgumentException ex) {
+            model.addAttribute("cultivoId", id);
+            model.addAttribute("error", ex.getMessage());
+            return "cultivos/form";
+        }
     }
 
     @PostMapping("/{id}/eliminar")
-    String eliminar(@PathVariable Integer id) {
-        cultivos.eliminar(id);
+    String eliminar(@PathVariable Integer id, RedirectAttributes flash) {
+        try {
+            cultivos.eliminar(id);
+            flash.addFlashAttribute("mensaje", "Cultivo eliminado exitosamente");
+        } catch (IllegalArgumentException ex) {
+            flash.addFlashAttribute("error", ex.getMessage());
+        }
         return "redirect:/cultivos";
     }
 
     @PostMapping("/{id}/dispositivos/nuevo")
-    String registrarDispositivo(@PathVariable Integer id) {
-        cultivos.registrarDispositivo(id);
+    String registrarDispositivo(@PathVariable Integer id, RedirectAttributes flash) {
+        try {
+            DispositivoIoT nodo = cultivos.registrarDispositivo(id);
+            flash.addFlashAttribute("mensaje", "Dispositivo #" + nodo.getIdDispositivo() + " creado y asignado exitosamente");
+        } catch (IllegalArgumentException ex) {
+            flash.addFlashAttribute("error", ex.getMessage());
+        }
         return "redirect:/cultivos/" + id;
     }
 
     @PostMapping("/{id}/dispositivos")
     String asignarDispositivo(@PathVariable Integer id,
-                              @RequestParam Integer idDispositivo) {
-        cultivos.asignarDispositivo(id, idDispositivo);
+                              @RequestParam Integer idDispositivo,
+                              RedirectAttributes flash) {
+        try {
+            cultivos.asignarDispositivo(id, idDispositivo);
+            flash.addFlashAttribute("mensaje", "Dispositivo #" + idDispositivo + " asignado exitosamente");
+        } catch (IllegalArgumentException ex) {
+            flash.addFlashAttribute("error", ex.getMessage());
+        }
+        return "redirect:/cultivos/" + id;
+    }
+
+    @PostMapping("/{id}/dispositivos/{idDispositivo}/desasignar")
+    String desasignarDispositivo(@PathVariable Integer id,
+                                 @PathVariable Integer idDispositivo,
+                                 RedirectAttributes flash) {
+        try {
+            cultivos.desasignarDispositivo(id, idDispositivo);
+            flash.addFlashAttribute("mensaje", "Dispositivo #" + idDispositivo + " desasignado exitosamente");
+        } catch (IllegalArgumentException ex) {
+            flash.addFlashAttribute("error", ex.getMessage());
+        }
         return "redirect:/cultivos/" + id;
     }
 
@@ -120,7 +169,7 @@ public class CultivoController {
                 .body(archivo);
     }
 
-        @PostMapping("/{id}/simular")
+    @PostMapping("/{id}/simular")
     String simular(@PathVariable Integer id, RedirectAttributes flash) {
         int total = simulador.simular(id);
         flash.addFlashAttribute("mensaje", total + " lecturas simuladas");

@@ -10,6 +10,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -42,5 +44,40 @@ class UsuarioServiceTest {
     void rechazaClavesDistintas() {
         assertThrows(IllegalArgumentException.class, () -> usuarios.registrar(
                 new RegistroRequest("Luis", "luis@agropiura.pe", "secreta123", "distinta456")));
+    }
+
+    @Test
+    void rechazaRequestNulo() {
+        assertThrows(IllegalArgumentException.class, () -> usuarios.registrar(null));
+    }
+
+    @Test
+    void rechazaNombreVacio() {
+        assertThrows(IllegalArgumentException.class, () -> usuarios.registrar(
+                new RegistroRequest("   ", "pedro@agropiura.pe", "secreta123", "secreta123")));
+    }
+
+    @Test
+    void rechazaCorreoVacio() {
+        assertThrows(IllegalArgumentException.class, () -> usuarios.registrar(
+                new RegistroRequest("Pedro", "   ", "secreta123", "secreta123")));
+    }
+
+    @Test
+    void rechazaContrasenaVacia() {
+        assertThrows(IllegalArgumentException.class, () -> usuarios.registrar(
+                new RegistroRequest("Pedro", "pedro@agropiura.pe", "", "")));
+    }
+
+    @Test
+    void buscarPorCorreo() {
+        usuarios.registrar(new RegistroRequest("Rosa", "rosa@agropiura.pe", "secreta123", "secreta123"));
+        Usuario encontrado = usuarios.buscarPorCorreo("ROSA@agropiura.pe");
+        assertNotNull(encontrado);
+        assertEquals("rosa@agropiura.pe", encontrado.getCorreo());
+        assertEquals("Rosa", encontrado.getNombre());
+
+        assertNull(usuarios.buscarPorCorreo("inexistente@agropiura.pe"));
+        assertNull(usuarios.buscarPorCorreo("  "));
     }
 }

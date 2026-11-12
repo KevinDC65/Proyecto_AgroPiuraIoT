@@ -216,6 +216,83 @@ body.app {
 
 /* ===== Contenido principal ===== */
 .principal { flex: 1; padding: 1.5rem 2rem 2.5rem; min-width: 0; }
+
+/* ===== Top Header de usuario autenticado ===== */
+.top-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.65rem 1.1rem;
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: var(--radio);
+    margin-bottom: 1.25rem;
+    color: #fff;
+}
+.header-left, .header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+.header-saludo {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.95rem;
+}
+.header-saludo .ico {
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+    flex-shrink: 0;
+}
+.header-saludo .suave {
+    opacity: 0.85;
+}
+.usuario-correo {
+    font-weight: 700;
+    color: #fff;
+}
+.header-notif {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    text-decoration: none;
+    padding: 0.4rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.15);
+    transition: background 0.2s;
+}
+.header-notif:hover {
+    background: rgba(255, 255, 255, 0.28);
+}
+.header-notif .ico {
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+}
+.header-notif .nav-badge {
+    position: absolute;
+    top: -5px;
+    right: -6px;
+}
+.btn-salir {
+    border-color: rgba(255, 255, 255, 0.65);
+    color: #fff;
+}
+.btn-salir:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
 .migas { color: rgba(255, 255, 255, 0.85); font-size: 0.9rem; }
 .fila-titulo {
     display: flex;

@@ -5,6 +5,7 @@
 <div class="shell">
     <aside th:replace="~{components/layout :: sidebar('cultivos')}"></aside>
     <main class="principal">
+        <header th:replace="~{components/layout :: header}"></header>
         <div class="fila-titulo">
             <span class="migas">Inicio &gt; Cultivos</span>
             <div class="grupo-botones">
@@ -13,6 +14,8 @@
             </div>
         </div>
         <h1>Cultivos</h1>
+        <p class="alerta exito" th:if="${mensaje}" th:text="${mensaje}"></p>
+        <p class="alerta error" th:if="${error}" th:text="${error}"></p>
         <div class="card">
             <p th:if="${#lists.isEmpty(cultivos)}">
                 Aún no hay cultivos registrados. Usa «+ Nuevo cultivo» para agregar el primero.
@@ -42,6 +45,10 @@
                         <div class="grupo-botones">
                             <a class="btn claro chico" th:href="@{/cultivos/{id}(id=${c.idCultivo})}">Detalle</a>
                             <a class="btn claro chico" th:href="@{/cultivos/{id}/editar(id=${c.idCultivo})}">Editar</a>
+                            <form th:action="@{/cultivos/{id}/eliminar(id=${c.idCultivo})}" method="post" class="inline"
+                                  onsubmit="return confirm('¿Eliminar este cultivo?');">
+                                <button class="btn claro chico" type="submit">Eliminar</button>
+                            </form>
                         </div>
                     </td>
                 </tr>

@@ -9,7 +9,18 @@ public record DashboardResumen(
         BigDecimal humedadPromedio,
         BigDecimal temperaturaPromedio,
         String ultimaSincronizacion,
-        List<CultivoEstado> cultivos) {
+        List<CultivoEstado> cultivos,
+        long dispositivosActivos) {
+
+    public DashboardResumen(
+            long cultivosActivos,
+            long alertasActivas,
+            BigDecimal humedadPromedio,
+            BigDecimal temperaturaPromedio,
+            String ultimaSincronizacion,
+            List<CultivoEstado> cultivos) {
+        this(cultivosActivos, alertasActivas, humedadPromedio, temperaturaPromedio, ultimaSincronizacion, cultivos, 0L);
+    }
 
     public record CultivoEstado(
         Integer idCultivo,
@@ -19,5 +30,5 @@ public record DashboardResumen(
         String estado,
         BigDecimal latitud,
         BigDecimal longitud) {
-        }
+    }
 }

@@ -20,9 +20,12 @@ public class SecurityConfig {
 
     @Bean
     SecurityFilterChain filtroSeguridad(HttpSecurity http) throws Exception {
-        http.authorizeHttpRequests(auth -> auth
+        http
+                .csrf(csrf -> csrf
+                        .ignoringRequestMatchers("/api/**"))
+                .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/", "/login", "/registro",
-                                "/css/**", "/js/**", "/img/**", "/error").permitAll()
+                                "/css/**", "/js/**", "/img/**", "/error", "/api/**").permitAll()
                         // RF-07: solo un administrador modifica accesos por cultivo
                         .requestMatchers(HttpMethod.POST,
                                 "/cultivos/*/accesos", "/cultivos/*/accesos/*")

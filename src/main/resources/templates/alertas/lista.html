@@ -5,18 +5,23 @@
 <div class="shell">
     <aside th:replace="~{components/layout :: sidebar('alertas')}"></aside>
     <main class="principal">
+        <header th:replace="~{components/layout :: header}"></header>
         <span class="migas">Inicio &gt; Alertas</span>
-        <h1>Alertas</h1>
+        <h1>Alertas y Notificaciones</h1>
 
         <p class="alerta exito" th:if="${mensaje}" th:text="${mensaje}"></p>
+        <p class="alerta error" th:if="${error}" th:text="${error}"></p>
 
         <div class="card">
             <h2>Mis notificaciones sin leer</h2>
             <p th:if="${#lists.isEmpty(notificaciones)}">No tienes notificaciones pendientes.</p>
             <div th:unless="${#lists.isEmpty(notificaciones)}">
                 <div class="alerta error" th:each="n : ${notificaciones}"
-                     style="margin-bottom:0.5rem; display:flex; align-items:center; gap:0.8rem;">
-                    <span th:text="${n.alerta.umbral.cultivo.nombre} + ': ' + ${n.alerta.mensaje}"></span>
+                     style="margin-bottom:0.6rem; display:flex; align-items:center; justify-content:space-between; gap:0.8rem; flex-wrap:wrap;">
+                    <div>
+                        <strong th:text="${n.alerta.umbral.cultivo.nombre} + ': '"></strong>
+                        <span th:text="${n.alerta.mensaje}"></span>
+                    </div>
                     <form th:action="@{/alertas/{id}/leida(id=${n.idNotificacion})}" method="post" class="inline">
                         <button class="btn claro chico" type="submit">Marcar como leída</button>
                     </form>
@@ -25,12 +30,12 @@
         </div>
 
         <div class="card">
-            <h2>Historial de alertas</h2>
+            <h2>Historial de alertas del sistema</h2>
             <p th:if="${#lists.isEmpty(alertas)}">Aún no se han generado alertas en el sistema.</p>
             <table class="tabla" th:unless="${#lists.isEmpty(alertas)}">
                 <thead>
                 <tr>
-                    <th>Fecha</th>
+                    <th>Fecha y hora</th>
                     <th>Cultivo</th>
                     <th>Variable</th>
                     <th>Mensaje</th>
@@ -58,7 +63,7 @@
                               method="post" class="inline">
                             <button class="btn claro chico" type="submit">Marcar como atendida</button>
                         </form>
-                        <span th:if="${a.atendida}" class="suave">—</span>
+                        <span th:if="${a.atendida}" class="suave">Atendida</span>
                     </td>
                 </tr>
                 </tbody>

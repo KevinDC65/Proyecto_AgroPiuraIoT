@@ -5,14 +5,16 @@
 <div class="shell">
     <aside th:replace="~{components/layout :: sidebar('dashboard')}"></aside>
     <main class="principal">
+        <header th:replace="~{components/layout :: header}"></header>
         <div class="fila-titulo">
             <span class="migas">Inicio &gt; Dashboard</span>
             <span class="sincro" th:text="'Última sincronización: ' + ${resumen.ultimaSincronizacion}"></span>
         </div>
         <h1>Resumen de hoy</h1>
         <section class="kpis">
-            <article class="card kpi"><small>Cultivos activos</small><strong th:text="${resumen.cultivosActivos}"></strong></article>
+            <article class="card kpi"><small>Cultivos monitoreados</small><strong th:text="${resumen.cultivosActivos}"></strong></article>
             <article class="card kpi destacado"><small>Alertas pendientes</small><strong th:text="${resumen.alertasActivas}"></strong></article>
+            <article class="card kpi"><small>Dispositivos activos</small><strong th:text="${resumen.dispositivosActivos}"></strong></article>
             <article class="card kpi"><small>Humedad promedio</small><strong th:text="${resumen.humedadPromedio} != null ? ${resumen.humedadPromedio} + '%' : '-'"></strong></article>
             <article class="card kpi"><small>Temp. promedio</small><strong th:text="${resumen.temperaturaPromedio} != null ? ${resumen.temperaturaPromedio} + '°C' : '-'"></strong></article>
         </section>

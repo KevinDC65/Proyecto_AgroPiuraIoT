@@ -1,17 +1,21 @@
 <!DOCTYPE html>
-<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head th:replace="~{components/layout :: head('Portada')}"></head>
 <body class="publico">
 <div th:replace="~{components/layout :: topPublico}"></div>
 <main class="portada">
+    <p class="alerta exito" th:if="${param.logout}" style="margin-bottom:1.5rem">Has cerrado sesión correctamente.</p>
     <section class="hero">
         <div>
             <h1>Del dato a la decisión, en tiempo real</h1>
             <p>Mide la humedad y la temperatura de tus parcelas en Piura y
                 recibe una alerta antes de perder la cosecha.</p>
-            <div class="acciones">
+            <div class="acciones" sec:authorize="isAnonymous()">
                 <a class="btn" th:href="@{/login}">Ingresar</a>
                 <a class="btn fantasma" th:href="@{/registro}">Crear cuenta</a>
+            </div>
+            <div class="acciones" sec:authorize="isAuthenticated()">
+                <a class="btn" th:href="@{/dashboard}">Ir a mi Dashboard</a>
             </div>
         </div>
         <div class="demo-card">

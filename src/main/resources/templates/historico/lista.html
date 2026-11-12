@@ -7,7 +7,8 @@
     <div class="shell">
         <aside th:replace="~{components/layout :: sidebar('historico')}"></aside>
         <main class="principal">
-            <span class="migas">Inicio > Cultivos > <span th:text="${cultivo.nombre}"></span> > Histórico</span>
+            <header th:replace="~{components/layout :: header}"></header>
+            <span class="migas">Inicio &gt; <a th:href="@{/cultivos}" style="color:#fff">Cultivos</a> &gt; <span th:text="${cultivo.nombre}"></span> &gt; Histórico</span>
             <h1 th:text="'Histórico de ' + ${cultivo.nombre}"></h1>
 
             <div class="card" style="margin-bottom:1rem">

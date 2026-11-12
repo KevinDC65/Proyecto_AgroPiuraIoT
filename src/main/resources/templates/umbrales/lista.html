@@ -5,8 +5,11 @@
 <div class="shell">
     <aside th:replace="~{components/layout :: sidebar('umbrales')}"></aside>
     <main class="principal">
+        <header th:replace="~{components/layout :: header}"></header>
         <span class="migas">Inicio &gt; Cultivos &gt; <span th:text="${cultivo.nombre}"></span> &gt; Umbrales</span>
         <h1 th:text="'Umbrales de ' + ${cultivo.nombre}"></h1>
+        <p class="alerta exito" th:if="${mensaje}" th:text="${mensaje}"></p>
+        <p class="alerta error" th:if="${error}" th:text="${error}"></p>
 
         <div class="card">
             <h2>Umbrales configurados</h2>
@@ -36,7 +39,7 @@
 
         <div class="card">
             <h2 th:text="${umbralEditado} != null ? 'Editar umbral' : 'Nuevo umbral'"></h2>
-            <form th:action="@{/cultivos/{id}/umbrales(id=${cultivo.idCultivo})}" method="post" class="form"
+            <form id="formUmbral" th:action="@{/cultivos/{id}/umbrales(id=${cultivo.idCultivo})}" method="post" class="form"
                   th:object="${form}">
                 <label>Variable monitoreada
                     <select name="idTipoSensor" required>
@@ -49,13 +52,22 @@
                 </label>
                 <div class="form-fila">
                     <label>Valor mínimo
-                        <input type="number" name="valorMinimo" step="0.01" min="0" max="1000" required
+                        <input id="inputMin" type="number" name="valorMinimo" step="0.01" min="0" max="1000" required
                                th:value="*{valorMinimo}" placeholder="Ej. 20">
+                        <input id="sliderMin" type="range" min="0" max="100" step="0.5"
+                               th:value="*{valorMinimo} != null ? *{valorMinimo} : 20"
+                               style="margin-top:0.35rem; width:100%; accent-color:var(--teal-600);">
                     </label>
                     <label>Valor máximo
-                        <input type="number" name="valorMaximo" step="0.01" min="0" max="1000" required
+                        <input id="inputMax" type="number" name="valorMaximo" step="0.01" min="0" max="1000" required
                                th:value="*{valorMaximo}" placeholder="Ej. 80">
+                        <input id="sliderMax" type="range" min="0" max="100" step="0.5"
+                               th:value="*{valorMaximo} != null ? *{valorMaximo} : 80"
+                               style="margin-top:0.35rem; width:100%; accent-color:var(--naranja);">
                     </label>
+                </div>
+                <div id="errorRangoCliente" class="alerta error" style="display:none;">
+                    El valor mínimo no puede ser mayor que el valor máximo.
                 </div>
                 <p class="alerta error" th:if="${#fields.hasErrors('idTipoSensor')}" th:errors="*{idTipoSensor}"></p>
                 <p class="alerta error" th:if="${#fields.hasErrors('valorMinimo')}" th:errors="*{valorMinimo}"></p>
@@ -69,8 +81,49 @@
             </form>
         </div>
 
-        <p><a class="enlace-claro" th:href="@{/cultivos/{id}(id=${cultivo.idCultivo})}">Volver al detalle del cultivo</a></p>
+        <p><a class="enlace-claro" th:href="@{/cultivos/{id}(id=${cultivo.idCultivo})}">&larr; Volver al detalle del cultivo</a></p>
     </main>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const inputMin = document.getElementById('inputMin');
+        const sliderMin = document.getElementById('sliderMin');
+        const inputMax = document.getElementById('inputMax');
+        const sliderMax = document.getElementById('sliderMax');
+        const form = document.getElementById('formUmbral');
+        const errorRango = document.getElementById('errorRangoCliente');
+
+        if (inputMin && sliderMin) {
+            sliderMin.addEventListener('input', () => { inputMin.value = sliderMin.value; validar(); });
+            inputMin.addEventListener('input', () => { if (inputMin.value <= 100) sliderMin.value = inputMin.value; validar(); });
+        }
+        if (inputMax && sliderMax) {
+            sliderMax.addEventListener('input', () => { inputMax.value = sliderMax.value; validar(); });
+            inputMax.addEventListener('input', () => { if (inputMax.value <= 100) sliderMax.value = inputMax.value; validar(); });
+        }
+
+        function validar() {
+            const min = parseFloat(inputMin.value);
+            const max = parseFloat(inputMax.value);
+            if (!isNaN(min) && !isNaN(max) && min > max) {
+                errorRango.style.display = 'block';
+                return false;
+            } else {
+                errorRango.style.display = 'none';
+                return true;
+            }
+        }
+
+        if (form) {
+            form.addEventListener('submit', function (e) {
+                if (!validar()) {
+                    e.preventDefault();
+                    errorRango.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+        }
+    });
+</script>
 </body>
 </html>

@@ -27,6 +27,14 @@ public class DataSeeder {
     public static final String ADMIN_DEMO_CORREO = "admin@agropiura.com";
     public static final String ADMIN_DEMO_CLAVE = "AgroAdmin2026";
 
+    /** Usuario colaborador de demostración (RF-07). */
+    public static final String COLAB_DEMO_CORREO = "colaborador@agropiura.com";
+    public static final String COLAB_DEMO_CLAVE = "AgroColab2026";
+
+    /** Usuario estándar de demostración (sin cultivo asignado aún). */
+    public static final String USER_DEMO_CORREO = "usuario@agropiura.com";
+    public static final String USER_DEMO_CLAVE = "AgroUser2026";
+
     @Bean
     ApplicationRunner sembrarCatalogos(RolRepository roles, TipoSensorRepository tipos,
                                        UsuarioRepository usuarios, CultivoRepository cultivos,
@@ -36,6 +44,8 @@ public class DataSeeder {
             sembrarRoles(roles);
             sembrarTiposSensor(tipos);
             sembrarAdminDemo(roles, usuarios, cultivos, accesos, claves);
+            sembrarColabDemo(roles, usuarios, cultivos, accesos, claves);
+            sembrarUsuarioDemo(usuarios, claves);
         };
     }
 
@@ -106,5 +116,45 @@ public class DataSeeder {
 
         log.info("Usuario administrador de demostración sembrado: {} "
                 + "(clave: ADMIN_DEMO_CLAVE, definida en DataSeeder)", ADMIN_DEMO_CORREO);
+    }
+
+    private void sembrarColabDemo(RolRepository roles, UsuarioRepository usuarios,
+                                  CultivoRepository cultivos, UsuarioCultivoRepository accesos,
+                                  PasswordEncoder claves) {
+        if (usuarios.existsByCorreo(COLAB_DEMO_CORREO)) {
+            return;
+        }
+        Usuario colab = new Usuario();
+        colab.setNombre("Colaborador Demo");
+        colab.setCorreo(COLAB_DEMO_CORREO);
+        colab.setContrasena(claves.encode(COLAB_DEMO_CLAVE));
+        usuarios.save(colab);
+
+        cultivos.findByNombre("Parcela Demo - Piura").ifPresent(demo -> {
+            roles.findByNombreRolIgnoreCase("colaborador").ifPresent(rolColab -> {
+                UsuarioCultivo acceso = new UsuarioCultivo();
+                acceso.setUsuario(colab);
+                acceso.setCultivo(demo);
+                acceso.setRol(rolColab);
+                accesos.save(acceso);
+            });
+        });
+
+        log.info("Usuario colaborador de demostración sembrado: {} "
+                + "(clave: COLAB_DEMO_CLAVE, definida en DataSeeder)", COLAB_DEMO_CORREO);
+    }
+
+    private void sembrarUsuarioDemo(UsuarioRepository usuarios, PasswordEncoder claves) {
+        if (usuarios.existsByCorreo(USER_DEMO_CORREO)) {
+            return;
+        }
+        Usuario user = new Usuario();
+        user.setNombre("Usuario Estándar Demo");
+        user.setCorreo(USER_DEMO_CORREO);
+        user.setContrasena(claves.encode(USER_DEMO_CLAVE));
+        usuarios.save(user);
+
+        log.info("Usuario estándar de demostración sembrado: {} "
+                + "(clave: USER_DEMO_CLAVE, definida en DataSeeder)", USER_DEMO_CORREO);
     }
 }

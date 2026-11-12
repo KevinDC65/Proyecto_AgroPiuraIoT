@@ -7,6 +7,7 @@
     <h1>AgroPiura IoT</h1>
     <p class="auth-sub">Ingresa para ver tus parcelas</p>
     <p class="alerta exito" th:if="${param.registrado}">Cuenta creada. Ingresa con tu correo y contraseña.</p>
+    <p class="alerta exito" th:if="${param.logout}">Has cerrado sesión correctamente.</p>
     <p class="alerta error" th:if="${param.error}">Correo o contraseña incorrectos.</p>
     <form th:action="@{/login}" method="post" class="form">
         <label>Correo electrónico

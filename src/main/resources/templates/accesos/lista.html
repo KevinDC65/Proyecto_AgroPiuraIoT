@@ -6,11 +6,12 @@
 <div class="shell">
     <aside th:replace="~{components/layout :: sidebar('cultivos')}"></aside>
     <main class="principal">
-        <span class="migas">Inicio &gt; Cultivos &gt; <span th:text="${cultivo.nombre}"></span> &gt; Accesos</span>
+        <header th:replace="~{components/layout :: header}"></header>
+        <span class="migas">Inicio &gt; <a th:href="@{/cultivos}" style="color:#fff">Cultivos</a> &gt; <span th:text="${cultivo.nombre}"></span> &gt; Accesos</span>
         <h1 th:text="'Accesos de ' + ${cultivo.nombre}"></h1>
 
         <p class="alerta error" th:if="${error}" th:text="${error}"></p>
-        <p class="alerta ok" th:if="${mensaje}" th:text="${mensaje}"></p>
+        <p class="alerta exito" th:if="${mensaje}" th:text="${mensaje}"></p>
 
         <div class="card">
             <h2>Usuarios con acceso</h2>
