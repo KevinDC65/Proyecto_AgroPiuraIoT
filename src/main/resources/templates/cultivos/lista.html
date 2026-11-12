@@ -7,22 +7,30 @@
     <main class="principal">
         <div class="fila-titulo">
             <span class="migas">Inicio &gt; Cultivos</span>
-            <div>
+            <div class="grupo-botones">
                 <a class="btn claro chico" th:href="@{/cultivos/exportar.xlsx}">Exportar Excel</a>
                 <a class="btn" th:href="@{/cultivos/nuevo}">+ Nuevo cultivo</a>
             </div>
         </div>
         <h1>Cultivos</h1>
         <div class="card">
-            <p th:if="${#lists.isEmpty(cultivos)}">Aún no hay cultivos registrados.</p>
+            <p th:if="${#lists.isEmpty(cultivos)}">
+                Aún no hay cultivos registrados. Usa «+ Nuevo cultivo» para agregar el primero.
+            </p>
             <table class="tabla" th:unless="${#lists.isEmpty(cultivos)}">
                 <thead>
-                <tr><th>Nombre</th><th>Tipo</th><th>Zona</th><th>Área (ha)</th><th>Dispositivo</th><th>Acciones</th></tr>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Tipo</th>
+                    <th>Zona</th>
+                    <th>Área (ha)</th>
+                    <th>Dispositivo</th>
+                    <th>Acciones</th>
+                </tr>
                 </thead>
                 <tbody>
                 <tr th:each="c : ${cultivos}">
-                    <td><span class="fuerte" th:text="${c.nombre}"></span><br>
-                        <span class="suave" th:text="${c.tipoCultivo}"></span></td>
+                    <td class="fuerte" th:text="${c.nombre}"></td>
                     <td th:text="${c.tipoCultivo}"></td>
                     <td th:text="${c.ubicacion} ?: '-'"></td>
                     <td th:text="${c.areaHa} ?: '-'"></td>
@@ -31,8 +39,10 @@
                         <span class="badge badge-mutes" th:if="${#sets.isEmpty(c.dispositivos)}">Inactivo</span>
                     </td>
                     <td>
-                        <a class="btn claro chico" th:href="@{/cultivos/{id}(id=${c.idCultivo})}">Detalle</a>
-                        <a class="btn claro chico" th:href="@{/cultivos/{id}/editar(id=${c.idCultivo})}">Editar</a>
+                        <div class="grupo-botones">
+                            <a class="btn claro chico" th:href="@{/cultivos/{id}(id=${c.idCultivo})}">Detalle</a>
+                            <a class="btn claro chico" th:href="@{/cultivos/{id}/editar(id=${c.idCultivo})}">Editar</a>
+                        </div>
                     </td>
                 </tr>
                 </tbody>

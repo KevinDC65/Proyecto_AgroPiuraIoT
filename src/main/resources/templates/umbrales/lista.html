@@ -12,20 +12,22 @@
             <h2>Umbrales configurados</h2>
             <p th:if="${#lists.isEmpty(umbrales)}">Aún no hay umbrales configurados para este cultivo.</p>
             <table class="tabla" th:unless="${#lists.isEmpty(umbrales)}">
-                <thead><tr><th>Variable</th><th>Mínimo</th><th>Máximo</th><th></th></tr></thead>
+                <thead><tr><th>Variable</th><th>Mínimo</th><th>Máximo</th><th>Acciones</th></tr></thead>
                 <tbody>
                 <tr th:each="u : ${umbrales}">
-                    <td th:text="${u.tipoSensor.obtenerNombre()}"></td>
+                    <td class="fuerte" th:text="${u.tipoSensor.obtenerNombre()}"></td>
                     <td th:text="${u.valorMinimo}"></td>
                     <td th:text="${u.valorMaximo}"></td>
                     <td>
-                        <a class="btn claro chico"
-                           th:href="@{/cultivos/{id}/umbrales(id=${cultivo.idCultivo}, editar=${u.idUmbral})}">Editar</a>
-                        <form th:action="@{/cultivos/{id}/umbrales/{idU}/eliminar(id=${cultivo.idCultivo}, idU=${u.idUmbral})}"
-                              method="post" class="inline"
-                              onsubmit="return confirm('¿Eliminar este umbral?');">
-                            <button class="btn claro chico" type="submit">Eliminar</button>
-                        </form>
+                        <div class="grupo-botones">
+                            <a class="btn claro chico"
+                               th:href="@{/cultivos/{id}/umbrales(id=${cultivo.idCultivo}, editar=${u.idUmbral})}">Editar</a>
+                            <form th:action="@{/cultivos/{id}/umbrales/{idU}/eliminar(id=${cultivo.idCultivo}, idU=${u.idUmbral})}"
+                                  method="post" class="inline"
+                                  onsubmit="return confirm('¿Eliminar este umbral?');">
+                                <button class="btn claro chico" type="submit">Eliminar</button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
                 </tbody>
@@ -45,25 +47,29 @@
                                 th:selected="*{idTipoSensor} != null and *{idTipoSensor} == ${t.idTipoSensor}"></option>
                     </select>
                 </label>
-                <label>Valor mínimo
-                    <input type="number" name="valorMinimo" step="0.01" min="0" max="1000" required
-                           th:value="*{valorMinimo}" placeholder="Ej. 20">
-                </label>
-                <label>Valor máximo
-                    <input type="number" name="valorMaximo" step="0.01" min="0" max="1000" required
-                           th:value="*{valorMaximo}" placeholder="Ej. 80">
-                </label>
+                <div class="form-fila">
+                    <label>Valor mínimo
+                        <input type="number" name="valorMinimo" step="0.01" min="0" max="1000" required
+                               th:value="*{valorMinimo}" placeholder="Ej. 20">
+                    </label>
+                    <label>Valor máximo
+                        <input type="number" name="valorMaximo" step="0.01" min="0" max="1000" required
+                               th:value="*{valorMaximo}" placeholder="Ej. 80">
+                    </label>
+                </div>
                 <p class="alerta error" th:if="${#fields.hasErrors('idTipoSensor')}" th:errors="*{idTipoSensor}"></p>
                 <p class="alerta error" th:if="${#fields.hasErrors('valorMinimo')}" th:errors="*{valorMinimo}"></p>
                 <p class="alerta error" th:if="${#fields.hasErrors('valorMaximo')}" th:errors="*{valorMaximo}"></p>
-                <div>
+                <div class="grupo-botones">
                     <button class="btn" type="submit"
                             th:text="${umbralEditado} != null ? 'Guardar cambios' : 'Agregar umbral'"></button>
+                    <a class="btn claro chico" th:if="${umbralEditado} != null"
+                       th:href="@{/cultivos/{id}/umbrales(id=${cultivo.idCultivo})}">Cancelar</a>
                 </div>
             </form>
         </div>
 
-        <p><a style="color:#fff" th:href="@{/cultivos/{id}(id=${cultivo.idCultivo})}">Volver al detalle del cultivo</a></p>
+        <p><a class="enlace-claro" th:href="@{/cultivos/{id}(id=${cultivo.idCultivo})}">Volver al detalle del cultivo</a></p>
     </main>
 </div>
 </body>
