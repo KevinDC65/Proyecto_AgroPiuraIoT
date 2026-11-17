@@ -1,5 +1,6 @@
 package com.utp.AgroPiuraIoT.service;
 
+import com.utp.AgroPiuraIoT.exception.ReglaNegocioException;
 import com.utp.AgroPiuraIoT.model.dto.RegistroRequest;
 import com.utp.AgroPiuraIoT.model.entity.Usuario;
 import com.utp.AgroPiuraIoT.repository.UsuarioRepository;
@@ -22,11 +23,11 @@ public class UsuarioService {
     @Transactional
     public Usuario registrar(RegistroRequest request) {
         if (!request.clavesCoinciden()) {
-            throw new IllegalArgumentException("Las contraseñas no coinciden");
+            throw new ReglaNegocioException("Las contraseñas no coinciden");
         }
         String correo = StringUtils.lowerCase(StringUtils.trim(request.correo()));
         if (usuarios.existsByCorreo(correo)) {
-            throw new IllegalArgumentException("Ese correo ya está registrado");
+            throw new ReglaNegocioException("Ese correo ya está registrado");
         }
         Usuario usuario = new Usuario();
         usuario.setNombre(StringUtils.trimToNull(request.nombre()));

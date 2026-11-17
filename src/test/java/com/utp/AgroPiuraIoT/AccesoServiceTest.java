@@ -1,5 +1,6 @@
 package com.utp.AgroPiuraIoT;
 
+import com.utp.AgroPiuraIoT.exception.ReglaNegocioException;
 import com.utp.AgroPiuraIoT.model.dto.CultivoForm;
 import com.utp.AgroPiuraIoT.model.dto.RegistroRequest;
 import com.utp.AgroPiuraIoT.model.entity.UsuarioCultivo;
@@ -80,7 +81,7 @@ class AccesoServiceTest {
     void correoInexistenteFallaConMensaje() {
         Integer idCultivo = crearCultivo("Limón - Accesos D");
 
-        Exception e = assertThrows(IllegalArgumentException.class,
+        Exception e = assertThrows(ReglaNegocioException.class,
                 () -> accesos.asignar(idCultivo, "nadie@test.com", "colaborador"));
         assertEquals("No existe un usuario con ese correo", e.getMessage());
     }
@@ -90,8 +91,35 @@ class AccesoServiceTest {
         Integer idCultivo = crearCultivo("Limón - Accesos E");
         crearUsuario("colab.acc4@test.com");
 
-        Exception e = assertThrows(IllegalArgumentException.class,
+        Exception e = assertThrows(ReglaNegocioException.class,
                 () -> accesos.asignar(idCultivo, "colab.acc4@test.com", "visitante"));
         assertEquals("Rol no reconocido: visitante", e.getMessage());
+    }
+
+    @Test
+    void noPermiteQuitarAlUnicoAdministrador() {
+        Integer idCultivo = crearCultivo("Limón - Accesos F");
+        crearUsuario("admin.acc5@test.com");
+        accesos.asignar(idCultivo, "admin.acc5@test.com", "administrador");
+
+        Exception e = assertThrows(ReglaNegocioException.class,
+                () -> accesos.quitar(idCultivo, "admin.acc5@test.com"));
+        assertEquals("No puedes quitar al único administrador del cultivo", e.getMessage());
+        assertEquals(1, accesos.listar(idCultivo).size());
+    }
+
+    @Test
+    void noPermiteDegradarAlUnicoAdministradorPeroSiSiHayOtro() {
+        Integer idCultivo = crearCultivo("Limón - Accesos G");
+        crearUsuario("admin.acc6@test.com");
+        crearUsuario("admin.acc7@test.com");
+        accesos.asignar(idCultivo, "admin.acc6@test.com", "administrador");
+
+        assertThrows(ReglaNegocioException.class,
+                () -> accesos.asignar(idCultivo, "admin.acc6@test.com", "colaborador"));
+
+        accesos.asignar(idCultivo, "admin.acc7@test.com", "administrador");
+        UsuarioCultivo degradado = accesos.asignar(idCultivo, "admin.acc6@test.com", "colaborador");
+        assertEquals("colaborador", degradado.getRol().getNombreRol());
     }
 }

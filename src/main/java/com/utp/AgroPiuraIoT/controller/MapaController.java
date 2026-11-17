@@ -1,6 +1,7 @@
 package com.utp.AgroPiuraIoT.controller;
 
 import com.utp.AgroPiuraIoT.service.DashboardService;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,8 +16,8 @@ public class MapaController {
     }
 
     @GetMapping("/mapa")
-    String mapa(Model model) {
-        model.addAttribute("resumen", dashboard.resumen());
+    public String mapa(Authentication auth, Model model) {
+        model.addAttribute("resumen", dashboard.resumen(auth.getName()));
         return "mapa/lista";
     }
 }

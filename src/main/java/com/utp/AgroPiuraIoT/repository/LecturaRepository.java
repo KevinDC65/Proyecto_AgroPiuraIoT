@@ -3,13 +3,15 @@ package com.utp.AgroPiuraIoT.repository;
 import com.utp.AgroPiuraIoT.model.entity.Lectura;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface LecturaRepository extends JpaRepository<Lectura, Integer> {
 
-    List<Lectura> findBySensorIdSensorOrderByFechaHoraDesc(Integer idSensor);
+    /** Última lectura del sensor (LIMIT 1): no carga todo el histórico. */
+    Optional<Lectura> findFirstBySensorIdSensorOrderByFechaHoraDesc(Integer idSensor);
 
     /**
      * Lecturas del cultivo indicado (el dispositivo del sensor debe estar
@@ -17,7 +19,9 @@ public interface LecturaRepository extends JpaRepository<Lectura, Integer> {
      */
     @Query("""
             SELECT l FROM Lectura l
-            WHERE l.sensor.dispositivo IN (
+            JOIN FETCH l.sensor s
+            JOIN FETCH s.tipoSensor
+            WHERE s.dispositivo IN (
                 SELECT d FROM Cultivo c JOIN c.dispositivos d WHERE c.idCultivo = :idCultivo
             )
             ORDER BY l.fechaHora DESC
@@ -27,7 +31,9 @@ public interface LecturaRepository extends JpaRepository<Lectura, Integer> {
     /** Igual que buscarPorCultivo, limitado al rango [desde, hasta] de fecha y hora. */
     @Query("""
             SELECT l FROM Lectura l
-            WHERE l.sensor.dispositivo IN (
+            JOIN FETCH l.sensor s
+            JOIN FETCH s.tipoSensor
+            WHERE s.dispositivo IN (
                 SELECT d FROM Cultivo c JOIN c.dispositivos d WHERE c.idCultivo = :idCultivo
             )
             AND l.fechaHora >= :desde

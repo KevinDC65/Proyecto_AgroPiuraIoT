@@ -1,5 +1,6 @@
 package com.utp.AgroPiuraIoT;
 
+import com.utp.AgroPiuraIoT.exception.ReglaNegocioException;
 import com.utp.AgroPiuraIoT.model.dto.RegistroRequest;
 import com.utp.AgroPiuraIoT.model.entity.Usuario;
 import com.utp.AgroPiuraIoT.service.UsuarioService;
@@ -34,13 +35,13 @@ class UsuarioServiceTest {
     @Test
     void rechazaCorreoDuplicado() {
         usuarios.registrar(new RegistroRequest("Ana", "ana@agropiura.pe", "secreta123", "secreta123"));
-        assertThrows(IllegalArgumentException.class, () -> usuarios.registrar(
+        assertThrows(ReglaNegocioException.class, () -> usuarios.registrar(
                 new RegistroRequest("Ana 2", "ana@agropiura.pe", "otraclave1", "otraclave1")));
     }
 
     @Test
     void rechazaClavesDistintas() {
-        assertThrows(IllegalArgumentException.class, () -> usuarios.registrar(
+        assertThrows(ReglaNegocioException.class, () -> usuarios.registrar(
                 new RegistroRequest("Luis", "luis@agropiura.pe", "secreta123", "distinta456")));
     }
 }

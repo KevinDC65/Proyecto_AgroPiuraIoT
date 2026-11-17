@@ -1,11 +1,11 @@
 package com.utp.AgroPiuraIoT.service;
 
+import com.utp.AgroPiuraIoT.exception.ReglaNegocioException;
 import com.utp.AgroPiuraIoT.model.dto.LecturaPunto;
 import com.utp.AgroPiuraIoT.model.dto.ResumenVariable;
 import com.utp.AgroPiuraIoT.model.entity.Lectura;
 import com.utp.AgroPiuraIoT.model.entity.TipoSensor;
 import com.utp.AgroPiuraIoT.model.entity.Umbral;
-import com.utp.AgroPiuraIoT.repository.CultivoRepository;
 import com.utp.AgroPiuraIoT.repository.LecturaRepository;
 import com.utp.AgroPiuraIoT.repository.UmbralRepository;
 import com.utp.AgroPiuraIoT.util.excel.HistoricoExcelExporter;
@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Comparator;
 import java.util.List;
@@ -29,28 +30,36 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class HistoricoService {
 
+    /** Límites usados cuando solo se indica un extremo del rango (seguros para PostgreSQL). */
+    private static final LocalDateTime INICIO_SIN_LIMITE = LocalDateTime.of(1970, 1, 1, 0, 0);
+    private static final LocalDateTime FIN_SIN_LIMITE = LocalDateTime.of(9999, 12, 31, 23, 59, 59);
+
     private final LecturaRepository lecturas;
     private final UmbralRepository umbrales;
 
-    public HistoricoService(LecturaRepository lecturas, UmbralRepository umbrales,
-            CultivoRepository cultivos) {
+    public HistoricoService(LecturaRepository lecturas, UmbralRepository umbrales) {
         this.lecturas = lecturas;
         this.umbrales = umbrales;
     }
 
     /**
-     * Devuelve las lecturas del cultivo dentro del rango indicado. Si no se pasa
-     * rango, incluye todo el histórico registrado.
+     * Devuelve las lecturas del cultivo dentro del rango indicado. Cada extremo
+     * es opcional: sin ninguno se devuelve todo el histórico registrado.
+     *
+     * @throws ReglaNegocioException si {@code desde} es posterior a {@code hasta}
      */
     @Transactional(readOnly = true)
     public List<Lectura> consultar(Integer idCultivo, LocalDate desde, LocalDate hasta) {
-        if (desde != null && hasta != null) {
-            return lecturas.buscarPorCultivoYRango(
-                    idCultivo,
-                    desde.atStartOfDay(),
-                    hasta.atTime(LocalTime.MAX));
+        if (desde == null && hasta == null) {
+            return lecturas.buscarPorCultivo(idCultivo);
         }
-        return lecturas.buscarPorCultivo(idCultivo);
+        if (desde != null && hasta != null && desde.isAfter(hasta)) {
+            throw new ReglaNegocioException("La fecha 'desde' no puede ser posterior a 'hasta'");
+        }
+        return lecturas.buscarPorCultivoYRango(
+                idCultivo,
+                desde == null ? INICIO_SIN_LIMITE : desde.atStartOfDay(),
+                hasta == null ? FIN_SIN_LIMITE : hasta.atTime(LocalTime.MAX));
     }
 
     @Transactional(readOnly = true)

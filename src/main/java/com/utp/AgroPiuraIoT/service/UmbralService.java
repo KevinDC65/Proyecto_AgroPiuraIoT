@@ -1,5 +1,7 @@
 package com.utp.AgroPiuraIoT.service;
 
+import com.utp.AgroPiuraIoT.exception.RecursoNoEncontradoException;
+import com.utp.AgroPiuraIoT.exception.ReglaNegocioException;
 import com.utp.AgroPiuraIoT.model.dto.UmbralForm;
 import com.utp.AgroPiuraIoT.model.entity.Cultivo;
 import com.utp.AgroPiuraIoT.model.entity.DispositivoIoT;
@@ -12,6 +14,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Umbrales por cultivo y variable (RF-03). */
 @Service
 public class UmbralService {
 
@@ -33,6 +36,11 @@ public class UmbralService {
         return umbrales.findByCultivoIdCultivo(idCultivo);
     }
 
+    @Transactional(readOnly = true)
+    public List<TipoSensor> tiposSensor() {
+        return tipos.findAll();
+    }
+
     /**
      * Guarda el umbral de una variable para el cultivo. Si ya existe un umbral
      * para el mismo tipo de sensor en el cultivo, lo actualiza en lugar de duplicarlo.
@@ -42,14 +50,14 @@ public class UmbralService {
     @Transactional
     public Umbral guardar(Integer idCultivo, UmbralForm form) {
         validar(form);
-        Cultivo cultivo = buscarCultivo(idCultivo);
+        Cultivo cultivo = cultivos.findById(idCultivo)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Cultivo", idCultivo));
         TipoSensor tipoSensor = tipos.findById(form.idTipoSensor())
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Tipo de sensor no encontrado: " + form.idTipoSensor()));
+                .orElseThrow(() -> new ReglaNegocioException(
+                        "Tipo de sensor no reconocido: " + form.idTipoSensor()));
 
-        Umbral umbral = umbrales.findByCultivoIdCultivo(idCultivo).stream()
-                .filter(u -> u.getTipoSensor().getIdTipoSensor().equals(form.idTipoSensor()))
-                .findFirst()
+        Umbral umbral = umbrales
+                .findByCultivoIdCultivoAndTipoSensorIdTipoSensor(idCultivo, form.idTipoSensor())
                 .orElseGet(Umbral::new);
         umbral.setCultivo(cultivo);
         umbral.setTipoSensor(tipoSensor);
@@ -60,23 +68,17 @@ public class UmbralService {
         return guardado;
     }
 
+    /** Umbral del cultivo; uno de otro cultivo se trata como inexistente. */
     @Transactional(readOnly = true)
     public Umbral buscar(Integer idCultivo, Integer idUmbral) {
-        Umbral umbral = umbrales.findById(idUmbral)
-                .orElseThrow(() -> new IllegalArgumentException("Umbral no encontrado: " + idUmbral));
-        if (!umbral.getCultivo().getIdCultivo().equals(idCultivo)) {
-            throw new IllegalArgumentException("El umbral no pertenece al cultivo indicado");
-        }
-        return umbral;
+        return umbrales.findById(idUmbral)
+                .filter(u -> u.getCultivo().getIdCultivo().equals(idCultivo))
+                .orElseThrow(() -> new RecursoNoEncontradoException("Umbral", idUmbral));
     }
 
     @Transactional
     public void eliminar(Integer idCultivo, Integer idUmbral) {
-        Umbral umbral = umbrales.findById(idUmbral)
-                .orElseThrow(() -> new IllegalArgumentException("Umbral no encontrado: " + idUmbral));
-        if (!umbral.getCultivo().getIdCultivo().equals(idCultivo)) {
-            throw new IllegalArgumentException("El umbral no pertenece al cultivo indicado");
-        }
+        Umbral umbral = buscar(idCultivo, idUmbral);
         umbrales.delete(umbral);
         invalidarCache(umbral.getCultivo());
     }
@@ -89,14 +91,11 @@ public class UmbralService {
     }
 
     private void validar(UmbralForm form) {
-        if (form.valorMinimo().compareTo(form.valorMaximo()) > 0) {
-            throw new IllegalArgumentException(
-                    "El valor mínimo no puede ser mayor que el valor máximo");
+        if (form.valorMinimo() == null || form.valorMaximo() == null || form.idTipoSensor() == null) {
+            throw new ReglaNegocioException("Tipo de sensor, mínimo y máximo son obligatorios");
         }
-    }
-
-    private Cultivo buscarCultivo(Integer idCultivo) {
-        return cultivos.findById(idCultivo)
-                .orElseThrow(() -> new IllegalArgumentException("Cultivo no encontrado: " + idCultivo));
+        if (form.valorMinimo().compareTo(form.valorMaximo()) > 0) {
+            throw new ReglaNegocioException("El valor mínimo no puede ser mayor que el valor máximo");
+        }
     }
 }

@@ -1,5 +1,7 @@
 package com.utp.AgroPiuraIoT;
 
+import com.utp.AgroPiuraIoT.exception.RecursoNoEncontradoException;
+import com.utp.AgroPiuraIoT.exception.ReglaNegocioException;
 import com.utp.AgroPiuraIoT.model.dto.CultivoForm;
 import com.utp.AgroPiuraIoT.model.dto.UmbralForm;
 import com.utp.AgroPiuraIoT.model.entity.Cultivo;
@@ -73,7 +75,7 @@ class UmbralServiceTest {
         Integer idCultivo = crearCultivo();
         Integer idHumedad = tipos.findAll().get(0).getIdTipoSensor();
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(ReglaNegocioException.class,
                 () -> umbrales.guardar(idCultivo, formulario(idHumedad, "80", "20")));
     }
 
@@ -81,7 +83,7 @@ class UmbralServiceTest {
     void rechazaCultivoInexistente() {
         Integer idHumedad = tipos.findAll().get(0).getIdTipoSensor();
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(RecursoNoEncontradoException.class,
                 () -> umbrales.guardar(99999, formulario(idHumedad, "20", "80")));
     }
 

@@ -16,12 +16,15 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Resumen del dashboard y del mapa (RF-04), limitado a los cultivos del usuario. */
 @Service
 public class DashboardService {
+
+    static final String HUMEDAD_SUELO = "humedad_suelo";
+    static final String TEMPERATURA_AMBIENTE = "temperatura_ambiente";
 
     private final CultivoRepository cultivos;
     private final SensorRepository sensores;
@@ -37,60 +40,77 @@ public class DashboardService {
     }
 
     @Transactional(readOnly = true)
-    public DashboardResumen resumen() {
-        List<Cultivo> todos = cultivos.findAll();
+    public DashboardResumen resumen(String correo) {
+        List<Cultivo> visibles = cultivos.buscarPorUsuario(correo);
         List<CultivoEstado> estados = new ArrayList<>();
         List<BigDecimal> humedades = new ArrayList<>();
         List<BigDecimal> temperaturas = new ArrayList<>();
         LocalDateTime ultimaFecha = null;
 
-        for (Cultivo cultivo : todos) {
-            BigDecimal humedad = ultimaLectura(cultivo, "humedad_suelo");
-            BigDecimal temperatura = ultimaLectura(cultivo, "temperatura_ambiente");
-            if (humedad != null) {
-                humedades.add(humedad);
+        for (Cultivo cultivo : visibles) {
+            UltimasLecturas ultimas = ultimasLecturas(cultivo);
+            if (ultimas.humedad() != null) {
+                humedades.add(ultimas.humedad().getValor());
             }
-            if (temperatura != null) {
-                temperaturas.add(temperatura);
+            if (ultimas.temperatura() != null) {
+                temperaturas.add(ultimas.temperatura().getValor());
             }
             String estado = "SIN_DATOS";
-            if (humedad != null || temperatura != null) {
+            if (ultimas.humedad() != null || ultimas.temperatura() != null) {
                 boolean conAlertas = alertas
-                    .countByUmbralCultivoIdCultivoAndAtendidaFalse(cultivo.getIdCultivo()) > 0;
+                        .countByUmbralCultivoIdCultivoAndAtendidaFalse(cultivo.getIdCultivo()) > 0;
                 estado = conAlertas ? "ALERTA" : "NORMAL";
             }
             estados.add(new CultivoEstado(
-                cultivo.getIdCultivo(),
-                cultivo.getNombre(),
-                humedad,
-                temperatura,
-                estado,
-                cultivo.getLatitud(),
-                cultivo.getLongitud()));
-            LocalDateTime fechaCultivo = ultimaFecha(cultivo);
-            if (fechaCultivo != null && (ultimaFecha == null || fechaCultivo.isAfter(ultimaFecha))) {
-                ultimaFecha = fechaCultivo;
+                    cultivo.getIdCultivo(),
+                    cultivo.getNombre(),
+                    ultimas.humedad() == null ? null : ultimas.humedad().getValor(),
+                    ultimas.temperatura() == null ? null : ultimas.temperatura().getValor(),
+                    estado,
+                    cultivo.getLatitud(),
+                    cultivo.getLongitud()));
+            if (ultimas.fecha() != null && (ultimaFecha == null || ultimas.fecha().isAfter(ultimaFecha))) {
+                ultimaFecha = ultimas.fecha();
             }
         }
 
-        return new DashboardResumen(todos.size(), alertas.countByAtendidaFalse(),
+        return new DashboardResumen(visibles.size(), alertas.contarActivasPorUsuario(correo),
                 promedio(humedades), promedio(temperaturas),
                 textoSincronizacion(ultimaFecha), estados);
     }
 
-    private LocalDateTime ultimaFecha(Cultivo cultivo) {
-        LocalDateTime ultima = null;
+    /**
+     * Recorre una sola vez los sensores del cultivo pidiendo solo su última
+     * lectura (LIMIT 1), en vez de cargar el histórico completo de cada sensor.
+     */
+    private UltimasLecturas ultimasLecturas(Cultivo cultivo) {
+        Lectura humedad = null;
+        Lectura temperatura = null;
+        LocalDateTime fecha = null;
         for (DispositivoIoT dispositivo : cultivo.getDispositivos()) {
             for (Sensor sensor : sensores.findByDispositivoIdDispositivo(dispositivo.getIdDispositivo())) {
-                List<Lectura> recientes =
-                        lecturas.findBySensorIdSensorOrderByFechaHoraDesc(sensor.getIdSensor());
-                if (!recientes.isEmpty() && recientes.get(0).getFechaHora() != null
-                        && (ultima == null || recientes.get(0).getFechaHora().isAfter(ultima))) {
-                    ultima = recientes.get(0).getFechaHora();
+                Lectura ultima = lecturas.findFirstBySensorIdSensorOrderByFechaHoraDesc(sensor.getIdSensor())
+                        .filter(l -> l.getValor() != null && l.getFechaHora() != null)
+                        .orElse(null);
+                if (ultima == null) {
+                    continue;
+                }
+                if (fecha == null || ultima.getFechaHora().isAfter(fecha)) {
+                    fecha = ultima.getFechaHora();
+                }
+                String tipo = sensor.getTipoSensor() == null ? "" : sensor.getTipoSensor().getNombreTipo();
+                if (HUMEDAD_SUELO.equalsIgnoreCase(tipo) && masReciente(ultima, humedad)) {
+                    humedad = ultima;
+                } else if (TEMPERATURA_AMBIENTE.equalsIgnoreCase(tipo) && masReciente(ultima, temperatura)) {
+                    temperatura = ultima;
                 }
             }
         }
-        return ultima;
+        return new UltimasLecturas(humedad, temperatura, fecha);
+    }
+
+    private static boolean masReciente(Lectura candidata, Lectura actual) {
+        return actual == null || candidata.getFechaHora().isAfter(actual.getFechaHora());
     }
 
     private String textoSincronizacion(LocalDateTime fecha) {
@@ -111,30 +131,14 @@ public class DashboardService {
         return "hace " + (horas / 24) + " días";
     }
 
-    private BigDecimal ultimaLectura(Cultivo cultivo, String tipoSensor) {
-        BigDecimal ultima = null;
-        for (DispositivoIoT dispositivo : cultivo.getDispositivos()) {
-            for (Sensor sensor : sensores.findByDispositivoIdDispositivo(dispositivo.getIdDispositivo())) {
-                if (sensor.getTipoSensor() != null
-                        && tipoSensor.equalsIgnoreCase(sensor.getTipoSensor().getNombreTipo())) {
-                    List<Lectura> recientes =
-                            lecturas.findBySensorIdSensorOrderByFechaHoraDesc(sensor.getIdSensor());
-                    if (!recientes.isEmpty() && recientes.get(0).getValor() != null) {
-                        ultima = recientes.get(0).getValor();
-                    }
-                }
-            }
-        }
-        return ultima;
-    }
-
     private BigDecimal promedio(List<BigDecimal> valores) {
-        if (valores == null || valores.isEmpty()) {
+        if (valores.isEmpty()) {
             return null;
         }
-        BigDecimal suma = valores.stream()
-                .filter(Objects::nonNull)
-                .reduce(BigDecimal.ZERO, (a, b) -> a.add(b));
+        BigDecimal suma = valores.stream().reduce(BigDecimal.ZERO, BigDecimal::add);
         return suma.divide(BigDecimal.valueOf(valores.size()), 2, RoundingMode.HALF_UP);
+    }
+
+    private record UltimasLecturas(Lectura humedad, Lectura temperatura, LocalDateTime fecha) {
     }
 }

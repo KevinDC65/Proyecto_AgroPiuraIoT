@@ -1,5 +1,6 @@
 package com.utp.AgroPiuraIoT.controller;
 
+import com.utp.AgroPiuraIoT.exception.ReglaNegocioException;
 import com.utp.AgroPiuraIoT.model.dto.RegistroRequest;
 import com.utp.AgroPiuraIoT.service.UsuarioService;
 import jakarta.validation.Valid;
@@ -40,7 +41,7 @@ public class AuthController {
         }
         try {
             usuarios.registrar(request);
-        } catch (IllegalArgumentException e) {
+        } catch (ReglaNegocioException e) {
             errores.reject("registro", e.getMessage());
             return "registro";
         }

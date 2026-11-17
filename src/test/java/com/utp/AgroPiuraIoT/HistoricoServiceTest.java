@@ -1,5 +1,6 @@
 package com.utp.AgroPiuraIoT;
 
+import com.utp.AgroPiuraIoT.exception.ReglaNegocioException;
 import com.utp.AgroPiuraIoT.model.dto.CultivoForm;
 import com.utp.AgroPiuraIoT.model.entity.Cultivo;
 import com.utp.AgroPiuraIoT.model.entity.Lectura;
@@ -20,6 +21,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
@@ -86,6 +88,24 @@ class HistoricoServiceTest {
         List<Lectura> todas = historico.consultar(cultivo.getIdCultivo(), null, null);
 
         assertEquals(3, todas.size());
+    }
+
+    @Test
+    void aceptaRangoAbiertoConSoloUnExtremo() {
+        Cultivo cultivo = prepararConLecturas();
+        LocalDate hoy = LocalDate.now();
+
+        assertEquals(2, historico.consultar(cultivo.getIdCultivo(), hoy.minusDays(1), null).size());
+        assertEquals(2, historico.consultar(cultivo.getIdCultivo(), null, hoy.minusDays(1)).size());
+    }
+
+    @Test
+    void rechazaRangoInvertido() {
+        Cultivo cultivo = prepararConLecturas();
+        LocalDate hoy = LocalDate.now();
+
+        assertThrows(ReglaNegocioException.class,
+                () -> historico.consultar(cultivo.getIdCultivo(), hoy, hoy.minusDays(2)));
     }
 
     @Test

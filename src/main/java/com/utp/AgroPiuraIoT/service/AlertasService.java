@@ -3,11 +3,12 @@ package com.utp.AgroPiuraIoT.service;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.utp.AgroPiuraIoT.exception.RecursoNoEncontradoException;
 import com.utp.AgroPiuraIoT.model.entity.Alerta;
-import com.utp.AgroPiuraIoT.model.entity.Cultivo;
 import com.utp.AgroPiuraIoT.model.entity.Lectura;
 import com.utp.AgroPiuraIoT.model.entity.NotificacionUsuario;
 import com.utp.AgroPiuraIoT.model.entity.Umbral;
+import com.utp.AgroPiuraIoT.model.entity.UsuarioCultivo;
 import com.utp.AgroPiuraIoT.repository.AlertaRepository;
 import com.utp.AgroPiuraIoT.repository.CultivoRepository;
 import com.utp.AgroPiuraIoT.repository.NotificacionUsuarioRepository;
@@ -28,7 +29,8 @@ import org.springframework.transaction.annotation.Transactional;
  * <p>
  * Los umbrales por dispositivo se resuelven con un cache de <strong>Guava</strong>
  * (expira a los 5 minutos): en un flujo continuo de telemetría evita repetir la
- * misma consulta de umbrales en cada lectura entrante.
+ * misma consulta de umbrales en cada lectura entrante. Se invalida al cambiar
+ * umbrales o la asignación de dispositivos.
  */
 @Service
 public class AlertasService {
@@ -36,8 +38,6 @@ public class AlertasService {
     private static final Logger log = LoggerFactory.getLogger(AlertasService.class);
 
     private final AlertaRepository alertas;
-    private final UmbralRepository umbrales;
-    private final CultivoRepository cultivos;
     private final NotificacionUsuarioRepository notificaciones;
     private final UsuarioCultivoRepository accesos;
 
@@ -48,8 +48,6 @@ public class AlertasService {
                           CultivoRepository cultivos, NotificacionUsuarioRepository notificaciones,
                           UsuarioCultivoRepository accesos) {
         this.alertas = alertas;
-        this.umbrales = umbrales;
-        this.cultivos = cultivos;
         this.notificaciones = notificaciones;
         this.accesos = accesos;
         this.umbralesPorDispositivo = CacheBuilder.newBuilder()
@@ -67,7 +65,9 @@ public class AlertasService {
      */
     @Transactional
     public Optional<Alerta> evaluar(Lectura lectura) {
-        if (lectura == null || lectura.getSensor() == null) {
+        if (lectura == null || lectura.getSensor() == null
+                || lectura.getSensor().getDispositivo() == null
+                || lectura.getSensor().getTipoSensor() == null) {
             return Optional.empty();
         }
         Integer idDispositivo = lectura.getSensor().getDispositivo().getIdDispositivo();
@@ -75,8 +75,8 @@ public class AlertasService {
 
         List<Umbral> umbralesDispositivo;
         try {
-            umbralesDispositivo = umbralesPorDispositivo.get(idDispositivo);
-        } catch (Exception e) {
+            umbralesDispositivo = umbralesPorDispositivo.getUnchecked(idDispositivo);
+        } catch (RuntimeException e) {
             throw new IllegalStateException("No se pudieron cargar los umbrales del dispositivo "
                     + idDispositivo, e);
         }
@@ -90,8 +90,7 @@ public class AlertasService {
         }
 
         Alerta alerta = alertas.save(Alerta.generar(lectura, umbral.get()));
-        notificar(accesos.findByCultivoIdCultivo(
-                umbral.get().getCultivo().getIdCultivo()), alerta);
+        notificar(accesos.findByCultivoIdCultivo(umbral.get().getCultivo().getIdCultivo()), alerta);
         log.warn("Alerta {} generada para lectura {} (valor {} fuera del rango)",
                 alerta.getIdAlerta(), lectura.getIdLectura(), lectura.getValor());
         return Optional.of(alerta);
@@ -99,8 +98,10 @@ public class AlertasService {
 
     /** Invalida el cache de umbrales cuando se actualiza la configuración. */
     public void invalidarCacheUmbrales(Integer idDispositivo) {
-        umbralesPorDispositivo.invalidate(idDispositivo);
-        log.debug("Cache de umbrales invalidado para dispositivo {}", idDispositivo);
+        if (idDispositivo != null) {
+            umbralesPorDispositivo.invalidate(idDispositivo);
+            log.debug("Cache de umbrales invalidado para dispositivo {}", idDispositivo);
+        }
     }
 
     @Transactional(readOnly = true)
@@ -108,20 +109,21 @@ public class AlertasService {
         return alertas.findByUmbralCultivoIdCultivoOrderByFechaAlertaDesc(idCultivo);
     }
 
+    /** Alertas de los cultivos a los que el usuario tiene acceso. */
     @Transactional(readOnly = true)
-    public List<Alerta> listarTodas() {
-        return alertas.findAllByOrderByFechaAlertaDesc();
+    public List<Alerta> listarPara(String correo) {
+        return alertas.buscarPorUsuario(correo);
     }
 
     @Transactional
     public void marcarAtendida(Integer idAlerta) {
         Alerta alerta = alertas.findById(idAlerta)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Alerta no encontrada: " + idAlerta));
-
+                .orElseThrow(() -> new RecursoNoEncontradoException("Alerta", idAlerta));
+        if (alerta.isAtendida()) {
+            return; // idempotente
+        }
         alerta.marcarAtendida();
         alertas.save(alerta);
-
         log.info("Alerta {} marcada como atendida", idAlerta);
     }
 
@@ -136,22 +138,21 @@ public class AlertasService {
         return notificaciones.countByUsuarioCorreoAndLeidoFalse(correo);
     }
 
-    /** Marca una notificación como leída, verificando que pertenezca al usuario. */
+    /**
+     * Marca una notificación como leída. Si no pertenece al usuario se responde
+     * como inexistente, para no revelar notificaciones ajenas.
+     */
     @Transactional
     public void marcarLeida(Integer idNotificacion, String correo) {
         NotificacionUsuario notificacion = notificaciones.findById(idNotificacion)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Notificación no encontrada: " + idNotificacion));
-        if (!notificacion.getUsuario().getCorreo().equals(correo)) {
-            throw new IllegalArgumentException("La notificación no pertenece al usuario");
-        }
+                .filter(n -> n.getUsuario().getCorreo().equals(correo))
+                .orElseThrow(() -> new RecursoNoEncontradoException("Notificación", idNotificacion));
         notificacion.marcarLeida();
         notificaciones.save(notificacion);
     }
 
-    private void notificar(List<com.utp.AgroPiuraIoT.model.entity.UsuarioCultivo> usuariosDelCultivo,
-                           Alerta alerta) {
-        for (com.utp.AgroPiuraIoT.model.entity.UsuarioCultivo acceso : usuariosDelCultivo) {
+    private void notificar(List<UsuarioCultivo> usuariosDelCultivo, Alerta alerta) {
+        for (UsuarioCultivo acceso : usuariosDelCultivo) {
             NotificacionUsuario notificacion = new NotificacionUsuario();
             notificacion.setAlerta(alerta);
             notificacion.setUsuario(acceso.getUsuario());
