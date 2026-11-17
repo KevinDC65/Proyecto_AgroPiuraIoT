@@ -2,32 +2,66 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{components/layout :: head('Crear cuenta')}"></head>
 <body class="publico">
-<div th:replace="~{components/layout :: topPublico}"></div>
-<main class="auth-card">
-    <h1>AgroPiura IoT</h1>
-    <p class="auth-sub">Crea tu cuenta de productor</p>
-    <form th:action="@{/registro}" th:object="${registro}" method="post" class="form">
-        <div class="alerta error" th:if="${#fields.hasGlobalErrors()}"
-             th:each="err : ${#fields.globalErrors()}" th:text="${err}"></div>
-        <label>Nombre
-            <input type="text" th:field="*{nombre}" placeholder="Tu nombre" maxlength="150" required>
-            <span class="error" th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}"></span>
-        </label>
-        <label>Correo electrónico
-            <input type="email" th:field="*{correo}" placeholder="nombre@correo.com" maxlength="150" required>
-            <span class="error" th:if="${#fields.hasErrors('correo')}" th:errors="*{correo}"></span>
-        </label>
-        <label>Contraseña (mínimo 8 caracteres)
-            <input type="password" th:field="*{contrasena}" placeholder="••••••••" required minlength="8">
-            <span class="error" th:if="${#fields.hasErrors('contrasena')}" th:errors="*{contrasena}"></span>
-        </label>
-        <label>Confirmar contraseña
-            <input type="password" th:field="*{confirmacion}" placeholder="••••••••" required>
-            <span class="error" th:if="${#fields.hasErrors('confirmacion')}" th:errors="*{confirmacion}"></span>
-        </label>
-        <button class="btn" type="submit">Crear cuenta</button>
-    </form>
-    <p class="auth-alt">¿Ya tienes cuenta? <a th:href="@{/login}">Ingresa aquí</a></p>
-</main>
+<div class="auth">
+    <section class="auth-lado" aria-hidden="true">
+        <a class="marca" th:href="@{/}" tabindex="-1">
+            <span class="marca-sello"><svg th:replace="~{components/icons :: sello}"></svg></span> AgroPiura IoT</a>
+        <div>
+            <h2>Una cuenta para todas tus parcelas.</h2>
+            <p>Registra tus cultivos, asigna sus nodos sensores y define cuándo quieres que te avisemos.</p>
+        </div>
+        <div class="auth-muestra">
+            <strong>Limón · Lote 2 — humedad 54 %</strong>
+            <div class="banda grande" data-estado="ok" style="--min:35;--max:80;--valor:54">
+                <span class="banda-rango"></span><span class="banda-aguja"></span></div>
+            <div class="banda-regla"><span>0 %</span><span>franja ideal 35–80 %</span><span>100 %</span></div>
+        </div>
+        <div class="greca"></div>
+    </section>
+
+    <main class="auth-principal">
+        <div class="auth-principal-top">
+            <a class="marca" th:href="@{/}"><span class="marca-sello"><svg th:replace="~{components/icons :: sello}"></svg></span> AgroPiura IoT</a>
+            <a class="btn fantasma" th:href="@{/}"><svg th:replace="~{components/icons :: icono('atras')}"></svg> Volver al inicio</a>
+        </div>
+        <div class="auth-form">
+            <h1>Crea tu cuenta de productor</h1>
+            <p class="auth-sub">Solo necesitas tu nombre y un correo.</p>
+
+            <form th:action="@{/registro}" th:object="${registro}" method="post" class="form" novalidate>
+                <p class="aviso error" role="alert" th:if="${#fields.hasGlobalErrors()}">
+                    <svg th:replace="~{components/icons :: icono('alerta')}"></svg>
+                    <span th:each="err : ${#fields.globalErrors()}" th:text="${err}"></span></p>
+                <label class="campo" th:classappend="${#fields.hasErrors('nombre')} ? ' con-error'">
+                    <span>Nombre</span>
+                    <input type="text" th:field="*{nombre}" placeholder="Tu nombre completo" maxlength="150" required autocomplete="name">
+                    <span class="error" th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}"></span>
+                </label>
+                <label class="campo" th:classappend="${#fields.hasErrors('correo')} ? ' con-error'">
+                    <span>Correo electrónico</span>
+                    <input type="email" th:field="*{correo}" placeholder="nombre@correo.com" maxlength="150" required
+                           autocomplete="email" autocapitalize="none" autocorrect="off">
+                    <span class="error" th:if="${#fields.hasErrors('correo')}" th:errors="*{correo}"></span>
+                </label>
+                <div class="fila">
+                    <label class="campo" th:classappend="${#fields.hasErrors('contrasena')} ? ' con-error'">
+                        <span>Contraseña</span>
+                        <input type="password" th:field="*{contrasena}" placeholder="Mínimo 8 caracteres" required minlength="8" autocomplete="new-password">
+                        <span class="error" th:if="${#fields.hasErrors('contrasena')}" th:errors="*{contrasena}"></span>
+                    </label>
+                    <label class="campo" th:classappend="${#fields.hasErrors('confirmacion')} ? ' con-error'">
+                        <span>Repite la contraseña</span>
+                        <input type="password" th:field="*{confirmacion}" placeholder="••••••••" required autocomplete="new-password">
+                        <span class="error" th:if="${#fields.hasErrors('confirmacion')}" th:errors="*{confirmacion}"></span>
+                    </label>
+                </div>
+                <div class="form-acciones">
+                    <button class="btn primario bloque" type="submit">Crear cuenta</button>
+                </div>
+            </form>
+            <p class="auth-alt">¿Ya tienes cuenta? <a th:href="@{/login}">Ingresa aquí</a></p>
+        </div>
+    </main>
+</div>
 </body>
 </html>

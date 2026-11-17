@@ -1,60 +1,104 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{components/layout :: head('Detalle de cultivo')}"></head>
+<head th:replace="~{components/layout :: head(${cultivo.nombre})}"></head>
 <body class="app">
+<a class="saltar" href="#contenido">Saltar al contenido</a>
 <div class="shell">
     <aside th:replace="~{components/layout :: sidebar('cultivos')}"></aside>
-    <main class="principal">
-        <span class="migas">Inicio &gt; Cultivos &gt; Detalle</span>
-        <p class="alerta exito" th:if="${mensaje}" th:text="${mensaje}"></p>
-        <div class="fila-titulo">
-            <h1 th:text="${cultivo.nombre}"></h1>
-            <div>
-                <a class="btn claro chico" th:href="@{/cultivos/{id}/editar(id=${cultivo.idCultivo})}">Editar</a>
-                <form th:action="@{/cultivos/{id}/eliminar(id=${cultivo.idCultivo})}" method="post" class="inline"
-                      onsubmit="return confirm('¿Eliminar este cultivo?');">
-                    <button class="btn claro chico" type="submit">Eliminar</button>
+    <main class="principal" id="contenido">
+        <header class="encabezado">
+            <div class="encabezado-texto">
+                <nav class="migas" aria-label="Ruta">
+                    <ol><li><a th:href="@{/dashboard}">Inicio</a></li><li><a th:href="@{/cultivos}">Cultivos</a></li>
+                        <li aria-current="page" th:text="${cultivo.nombre}">Mango</li></ol>
+                </nav>
+                <h1 th:text="${cultivo.nombre}">Mango · Parcela A</h1>
+                <div class="encabezado-meta">
+                    <span><svg th:replace="~{components/icons :: icono('brote')}"></svg><th:block th:text="${cultivo.tipoCultivo}">Mango</th:block></span>
+                    <span><svg th:replace="~{components/icons :: icono('pin')}"></svg><th:block th:text="${cultivo.ubicacion} ?: 'Zona sin registrar'">Chulucanas</th:block></span>
+                    <span><svg th:replace="~{components/icons :: icono('area')}"></svg><th:block th:text="${cultivo.areaHa} != null ? ${#numbers.formatDecimal(cultivo.areaHa, 1, 2)} + ' ha' : 'Área sin registrar'">3,20 ha</th:block></span>
+                </div>
+            </div>
+            <div class="encabezado-acciones">
+                <form th:action="@{/cultivos/{id}/simular(id=${cultivo.idCultivo})}" method="post" class="inline">
+                    <button class="btn secundario" type="submit">
+                        <svg th:replace="~{components/icons :: icono('simular')}"></svg> Simular lectura</button>
                 </form>
-                <form th:action="@{/cultivos/{id}/simular(id=${cultivo.idCultivo})}"
-                    method="post" class="inline">
-                    <button class="btn chico" type="submit">Simular lectura</button>
+                <a class="btn secundario" th:if="${puedeAdministrar}" th:href="@{/cultivos/{id}/editar(id=${cultivo.idCultivo})}">
+                    <svg th:replace="~{components/icons :: icono('editar')}"></svg> Editar</a>
+                <form th:if="${puedeAdministrar}" th:action="@{/cultivos/{id}/eliminar(id=${cultivo.idCultivo})}" method="post" class="inline"
+                      th:attr="data-confirmar='¿Eliminar ' + ${cultivo.nombre} + '? Se perderán sus dispositivos, umbrales y lecturas.'">
+                    <button class="btn peligro" type="submit">
+                        <svg th:replace="~{components/icons :: icono('borrar')}"></svg> Eliminar</button>
                 </form>
             </div>
+        </header>
+
+        <p class="aviso error" role="alert" th:if="${error}">
+            <svg th:replace="~{components/icons :: icono('alerta')}"></svg><span th:text="${error}"></span></p>
+        <p class="aviso ok" role="status" th:if="${mensaje}">
+            <svg th:replace="~{components/icons :: icono('check-circulo')}"></svg><span th:text="${mensaje}"></span></p>
+
+        <div class="rejilla principal-lateral">
+            <section class="panel" aria-labelledby="t-nodos">
+                <div class="panel-cabeza">
+                    <div>
+                        <h2 id="t-nodos">Dispositivos IoT</h2>
+                        <p>Nodos ESP32 que reportan las lecturas de esta parcela</p>
+                    </div>
+                    <form th:if="${puedeAdministrar}" th:action="@{/cultivos/{id}/dispositivos/nuevo(id=${cultivo.idCultivo})}" method="post">
+                        <button class="btn primario chico" type="submit">
+                            <svg th:replace="~{components/icons :: icono('mas')}"></svg> Registrar nodo nuevo</button>
+                    </form>
+                </div>
+
+                <div class="vacio" th:if="${#sets.isEmpty(cultivo.dispositivos)}">
+                    <span class="vacio-icono"><svg th:replace="~{components/icons :: icono('nodo')}"></svg></span>
+                    <strong>Sin dispositivos asignados</strong>
+                    <p>Registra un nodo nuevo o asigna uno existente por su ID para empezar a recibir lecturas.</p>
+                </div>
+                <div class="tabla-marco" th:unless="${#sets.isEmpty(cultivo.dispositivos)}">
+                    <table class="tabla apilable">
+                        <thead><tr><th>Nodo</th><th>Estado</th><th>Instalación</th></tr></thead>
+                        <tbody>
+                        <tr th:each="d : ${cultivo.dispositivos}">
+                            <td class="td-titulo"><span class="celda-principal" th:text="'Nodo #' + ${d.idDispositivo}">Nodo #3</span></td>
+                            <td data-etiqueta="Estado">
+                                <span class="estado ok" th:if="${d.estaActivo()}">Activo</span>
+                                <span class="estado sin-datos" th:unless="${d.estaActivo()}">Inactivo</span></td>
+                            <td data-etiqueta="Instalación" class="num" th:text="${d.fechaInstalacion} ?: '—'">2026-10-01</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <hr class="separador">
+                <form th:if="${puedeAdministrar}" th:action="@{/cultivos/{id}/dispositivos(id=${cultivo.idCultivo})}" method="post" class="panel-cuerpo fila-acciones">
+                    <label class="campo">
+                        <span>Asignar un nodo existente</span>
+                        <input type="number" name="idDispositivo" min="1" required placeholder="ID del nodo, ej. 3" inputmode="numeric">
+                    </label>
+                    <button class="btn secundario" type="submit">Asignar nodo</button>
+                </form>
+            </section>
+
+            <section class="panel" aria-labelledby="t-config">
+                <div class="panel-cabeza"><h2 id="t-config">Configuración y datos</h2></div>
+                <ul class="enlaces">
+                    <li><a class="enlace" th:href="@{/cultivos/{id}/umbrales(id=${cultivo.idCultivo})}">
+                        <span class="enlace-icono"><svg th:replace="~{components/icons :: icono('ajustes')}"></svg></span>
+                        <span><strong>Umbrales</strong><span class="suave">Mínimos y máximos que disparan las alertas</span></span>
+                        <span class="flecha"><svg th:replace="~{components/icons :: icono('chevron')}"></svg></span></a></li>
+                    <li><a class="enlace" th:href="@{/cultivos/{id}/historico(id=${cultivo.idCultivo})}">
+                        <span class="enlace-icono"><svg th:replace="~{components/icons :: icono('grafica')}"></svg></span>
+                        <span><strong>Histórico</strong><span class="suave">Gráfica de lecturas y exportación a Excel</span></span>
+                        <span class="flecha"><svg th:replace="~{components/icons :: icono('chevron')}"></svg></span></a></li>
+                    <li><a class="enlace" th:href="@{/cultivos/{id}/accesos(id=${cultivo.idCultivo})}">
+                        <span class="enlace-icono"><svg th:replace="~{components/icons :: icono('usuarios')}"></svg></span>
+                        <span><strong>Accesos</strong><span class="suave">Quién colabora en este cultivo y con qué rol</span></span>
+                        <span class="flecha"><svg th:replace="~{components/icons :: icono('chevron')}"></svg></span></a></li>
+                </ul>
+            </section>
         </div>
-        <div class="card">
-            <p><strong>Tipo:</strong> <span th:text="${cultivo.tipoCultivo}"></span>
-                · <strong>Zona:</strong> <span th:text="${cultivo.ubicacion} ?: '-'"></span>
-                · <strong>Área:</strong> <span th:text="${cultivo.areaHa} != null ? ${cultivo.areaHa} + ' ha' : '-'"></span></p>
-            <h2>Dispositivos IoT</h2>
-            <p th:if="${#sets.isEmpty(cultivo.dispositivos)}">Sin dispositivos asignados.</p>
-            <table class="tabla" th:unless="${#sets.isEmpty(cultivo.dispositivos)}">
-                <thead><tr><th>ID</th><th>Estado</th><th>Instalación</th></tr></thead>
-                <tbody>
-                <tr th:each="d : ${cultivo.dispositivos}">
-                    <td th:text="${d.idDispositivo}"></td>
-                    <td><span class="badge badge-ok" th:if="${d.estaActivo()}">Activo</span>
-                        <span class="badge badge-mutes" th:unless="${d.estaActivo()}">Inactivo</span></td>
-                    <td th:text="${d.fechaInstalacion}"></td>
-                </tr>
-                </tbody>
-            </table>
-            <form th:action="@{/cultivos/{id}/dispositivos/nuevo(id=${cultivo.idCultivo})}" method="post">
-                <button class="btn chico" type="submit">Registrar y asignar nuevo nodo</button>
-            </form>
-            <form th:action="@{/cultivos/{id}/dispositivos(id=${cultivo.idCultivo})}" method="post" class="form inline">
-                <label>Asignar nodo existente por ID
-                    <input type="number" name="idDispositivo" min="1" required placeholder="Ej. 3">
-                </label>
-                <button class="btn claro chico" type="submit">Asignar</button>
-            </form>
-            <h2>Umbrales</h2>
-            <p>Define aquí los límites mínimos y máximos por variable; de ellos dependen las alertas del sistema.</p>
-            <a class="btn chico" th:href="@{/cultivos/{id}/umbrales(id=${cultivo.idCultivo})}">Configurar umbrales</a>
-            <h2>Accesos</h2>
-            <p>Administra qué usuarios colaboran en este cultivo y con qué rol.</p>
-            <a class="btn chico" th:href="@{/cultivos/{id}/accesos(id=${cultivo.idCultivo})}">Gestionar accesos</a>
-        </div>
-        <p><a style="color:#fff" th:href="@{/cultivos}">Volver al listado</a></p>
     </main>
 </div>
 </body>

@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{components/layout :: head('Acceso denegado')}"></head>
+<body class="publico">
+<header th:replace="~{components/layout :: topPublico}"></header>
+<main class="error-pagina">
+    <span class="error-codigo" th:text="${status} ?: '403'">403</span>
+    <h1>No tienes permiso para esta acción</h1>
+    <p>Tu cuenta no tiene acceso a este cultivo o la acción requiere el rol de administrador del cultivo.</p>
+    <p class="error-ruta" th:if="${path}" th:text="${path}">/ruta</p>
+    <div class="form-acciones">
+        <a class="btn primario" th:href="@{/dashboard}">Ir al resumen</a>
+        <a class="btn secundario" th:href="@{/}">Volver al inicio</a>
+    </div>
+</main>
+</body>
+</html>

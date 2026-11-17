@@ -2,42 +2,65 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{components/layout :: head('Cultivos')}"></head>
 <body class="app">
+<a class="saltar" href="#contenido">Saltar al contenido</a>
 <div class="shell">
     <aside th:replace="~{components/layout :: sidebar('cultivos')}"></aside>
-    <main class="principal">
-        <div class="fila-titulo">
-            <span class="migas">Inicio &gt; Cultivos</span>
-            <div>
-                <a class="btn claro chico" th:href="@{/cultivos/exportar.xlsx}">Exportar Excel</a>
-                <a class="btn" th:href="@{/cultivos/nuevo}">+ Nuevo cultivo</a>
+    <main class="principal" id="contenido">
+        <header class="encabezado">
+            <div class="encabezado-texto">
+                <nav class="migas" aria-label="Ruta">
+                    <ol><li><a th:href="@{/dashboard}">Inicio</a></li><li aria-current="page">Cultivos</li></ol>
+                </nav>
+                <h1>Cultivos</h1>
             </div>
-        </div>
-        <h1>Cultivos</h1>
-        <div class="card">
-            <p th:if="${#lists.isEmpty(cultivos)}">Aún no hay cultivos registrados.</p>
-            <table class="tabla" th:unless="${#lists.isEmpty(cultivos)}">
-                <thead>
-                <tr><th>Nombre</th><th>Tipo</th><th>Zona</th><th>Área (ha)</th><th>Dispositivo</th><th>Acciones</th></tr>
-                </thead>
-                <tbody>
-                <tr th:each="c : ${cultivos}">
-                    <td><span class="fuerte" th:text="${c.nombre}"></span><br>
-                        <span class="suave" th:text="${c.tipoCultivo}"></span></td>
-                    <td th:text="${c.tipoCultivo}"></td>
-                    <td th:text="${c.ubicacion} ?: '-'"></td>
-                    <td th:text="${c.areaHa} ?: '-'"></td>
-                    <td>
-                        <span class="badge badge-ok" th:if="${!#sets.isEmpty(c.dispositivos)}">Activo</span>
-                        <span class="badge badge-mutes" th:if="${#sets.isEmpty(c.dispositivos)}">Inactivo</span>
-                    </td>
-                    <td>
-                        <a class="btn claro chico" th:href="@{/cultivos/{id}(id=${c.idCultivo})}">Detalle</a>
-                        <a class="btn claro chico" th:href="@{/cultivos/{id}/editar(id=${c.idCultivo})}">Editar</a>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
+            <div class="encabezado-acciones">
+                <a class="btn secundario" th:href="@{/cultivos/exportar.xlsx}" th:unless="${#lists.isEmpty(cultivos)}">
+                    <svg th:replace="~{components/icons :: icono('descargar')}"></svg> Exportar Excel</a>
+                <a class="btn primario" th:href="@{/cultivos/nuevo}">
+                    <svg th:replace="~{components/icons :: icono('mas')}"></svg> Nuevo cultivo</a>
+            </div>
+        </header>
+
+        <p class="aviso ok" role="status" th:if="${mensaje}">
+            <svg th:replace="~{components/icons :: icono('check-circulo')}"></svg><span th:text="${mensaje}"></span></p>
+
+        <section class="panel">
+            <div class="vacio" th:if="${#lists.isEmpty(cultivos)}">
+                <span class="vacio-icono"><svg th:replace="~{components/icons :: icono('brote')}"></svg></span>
+                <strong>Aún no hay cultivos registrados</strong>
+                <p>Registra cada parcela con su zona y coordenadas: así aparece en el mapa y puedes configurar sus umbrales.</p>
+                <a class="btn primario" th:href="@{/cultivos/nuevo}">Registrar cultivo</a>
+            </div>
+            <div class="tabla-marco" th:unless="${#lists.isEmpty(cultivos)}">
+                <table class="tabla apilable">
+                    <thead>
+                    <tr><th>Cultivo</th><th>Zona</th><th class="der">Área</th><th>Nodos</th><th><span class="solo-lector">Acciones</span></th></tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="c : ${cultivos}">
+                        <td class="td-titulo">
+                            <a class="celda-principal" th:href="@{/cultivos/{id}(id=${c.idCultivo})}" th:text="${c.nombre}">Mango · Parcela A</a>
+                            <span class="celda-sub" th:text="${c.tipoCultivo}">Mango</span>
+                        </td>
+                        <td data-etiqueta="Zona" th:text="${c.ubicacion} ?: '—'">Chulucanas</td>
+                        <td data-etiqueta="Área" class="der num" th:text="${c.areaHa} != null ? ${#numbers.formatDecimal(c.areaHa, 1, 2)} + ' ha' : '—'">3,20 ha</td>
+                        <td data-etiqueta="Nodos">
+                            <span class="estado ok" th:unless="${#sets.isEmpty(c.dispositivos)}"
+                                  th:text="${#sets.size(c.dispositivos)} == 1 ? '1 nodo' : ${#sets.size(c.dispositivos)} + ' nodos'">1 nodo</span>
+                            <span class="estado sin-datos" th:if="${#sets.isEmpty(c.dispositivos)}">Sin nodo</span>
+                        </td>
+                        <td class="td-acciones">
+                            <div class="celda-acciones">
+                                <a class="btn secundario chico" th:href="@{/cultivos/{id}(id=${c.idCultivo})}">Ver detalle</a>
+                                <a class="btn fantasma chico" th:if="${cultivosAdministrados.contains(c.idCultivo)}" th:href="@{/cultivos/{id}/editar(id=${c.idCultivo})}">
+                                    <svg th:replace="~{components/icons :: icono('editar')}"></svg> Editar</a>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
     </main>
 </div>
 </body>

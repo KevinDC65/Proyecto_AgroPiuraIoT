@@ -3,41 +3,92 @@
 
 <head th:fragment="head(titulo)">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="${titulo} + ' | AgroPiura IoT'">AgroPiura IoT</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+    <title th:text="${titulo} + ' · AgroPiura IoT'">AgroPiura IoT</title>
+    <meta name="description" content="Monitoreo de humedad y temperatura de cultivos en Piura con alertas por umbral.">
+    <meta name="theme-color" content="#1f1a16">
+    <meta name="color-scheme" content="light">
+    <link rel="icon" type="image/svg+xml" th:href="@{/img/favicon.svg}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" th:href="@{/css/app.css}">
+    <script th:src="@{/js/app.js}" defer></script>
 </head>
 
 <body>
     <!-- Barra superior de vistas públicas -->
-    <div th:fragment="topPublico">
-        <div class="top-publico">
-            <a class="marca" th:href="@{/}">AgroPiura IoT</a>
-            <a class="volver" th:href="@{/}">Volver</a>
-        </div>
-    </div>
-    <!-- Sidebar de la app (activo = sección actual; resto del mockup como Pronto) -->
-    <aside th:fragment="sidebar(activo)" class="sidebar">
-        <a class="marca" th:href="@{/dashboard}">AgroPiura IoT</a>
-        <a class="nav-item" th:classappend="${activo} == 'dashboard' ? ' activo'" th:href="@{/dashboard}">⌂
-            Dashboard</a>
-        <a class="nav-item" th:classappend="${activo} == 'cultivos' ? ' activo'" th:href="@{/cultivos}">◫ Cultivos</a>
-        <a class="nav-item" th:classappend="${activo} == 'umbrales' ? ' activo'" th:href="@{/umbrales}">◔ Umbrales</a>
-        <a class="nav-item" th:classappend="${activo} == 'alertas' ? ' activo'" th:href="@{/alertas}">
-            ⚠ Alertas
-            <span class="nav-badge" th:if="${notificacionesPendientes != null and notificacionesPendientes > 0}"
-                th:text="${notificacionesPendientes}"></span>
+    <header th:fragment="topPublico" class="top-publico">
+        <a class="marca" th:href="@{/}">
+            <span class="marca-sello"><svg th:replace="~{components/icons :: sello}"></svg></span>
+            AgroPiura IoT
         </a>
-        <a class="nav-item" th:classappend="${activo} == 'historico' ? ' activo'" th:href="@{/historico}">📈
-            Histórico</a>
-        <a class="nav-item" th:classappend="${activo} == 'mapa' ? ' activo'" th:href="@{/mapa}">🗺 Mapa</a>
-        <span class="nav-item pronto">💳 Pagos<span class="sello-pronto">Pronto</span></span>
-        <div sec:authorize="isAuthenticated()" style="margin-top:1rem">
-            <form th:action="@{/logout}" method="post">
-                <button type="submit" class="btn fantasma chico">Salir</button>
-            </form>
+        <nav aria-label="Cuenta">
+            <a class="btn fantasma" th:href="@{/login}">Ingresar</a>
+            <a class="btn" th:href="@{/registro}">Crear cuenta</a>
+        </nav>
+    </header>
+
+    <!-- Sidebar de la app (activo = sección actual). En móvil se pliega en un menú. -->
+    <aside th:fragment="sidebar(activo)" class="sidebar" data-sidebar data-abierto="false">
+        <div class="sidebar-cabeza">
+            <a class="marca" th:href="@{/dashboard}">
+                <span class="marca-sello"><svg th:replace="~{components/icons :: sello}"></svg></span>
+                AgroPiura IoT
+            </a>
+            <button type="button" class="menu-boton" aria-expanded="false" aria-controls="sidebar-cuerpo" data-menu-boton>
+                <span class="icono-abrir"><svg th:replace="~{components/icons :: icono('menu')}"></svg></span>
+                <span class="icono-cerrar"><svg th:replace="~{components/icons :: icono('cerrar')}"></svg></span>
+                <span class="solo-lector">Menú</span>
+            </button>
         </div>
-        <div class="plan-card"><strong>Plan Productor</strong><span>S/ 129 al mes</span></div>
+        <div class="greca" aria-hidden="true"></div>
+        <div class="sidebar-cuerpo" id="sidebar-cuerpo">
+            <nav class="nav" aria-label="Principal">
+                <a class="nav-item" th:classappend="${activo} == 'dashboard' ? ' activo'"
+                   th:attr="aria-current=${activo} == 'dashboard' ? 'page' : null" th:href="@{/dashboard}">
+                    <svg th:replace="~{components/icons :: icono('panel')}"></svg> Resumen</a>
+                <a class="nav-item" th:classappend="${activo} == 'cultivos' ? ' activo'"
+                   th:attr="aria-current=${activo} == 'cultivos' ? 'page' : null" th:href="@{/cultivos}">
+                    <svg th:replace="~{components/icons :: icono('brote')}"></svg> Cultivos</a>
+                <a class="nav-item" th:classappend="${activo} == 'alertas' ? ' activo'"
+                   th:attr="aria-current=${activo} == 'alertas' ? 'page' : null" th:href="@{/alertas}">
+                    <svg th:replace="~{components/icons :: icono('campana')}"></svg> Alertas
+                    <span class="nav-contador" th:if="${notificacionesPendientes != null and notificacionesPendientes > 0}"
+                          th:text="${notificacionesPendientes}"
+                          th:attr="aria-label=${notificacionesPendientes} + ' sin leer'"></span>
+                </a>
+                <a class="nav-item" th:classappend="${activo} == 'mapa' ? ' activo'"
+                   th:attr="aria-current=${activo} == 'mapa' ? 'page' : null" th:href="@{/mapa}">
+                    <svg th:replace="~{components/icons :: icono('mapa')}"></svg> Mapa</a>
+
+                <span class="nav-titulo">Por cultivo</span>
+                <a class="nav-item" th:classappend="${activo} == 'umbrales' ? ' activo'"
+                   th:attr="aria-current=${activo} == 'umbrales' ? 'page' : null" th:href="@{/umbrales}">
+                    <svg th:replace="~{components/icons :: icono('ajustes')}"></svg> Umbrales</a>
+                <a class="nav-item" th:classappend="${activo} == 'historico' ? ' activo'"
+                   th:attr="aria-current=${activo} == 'historico' ? 'page' : null" th:href="@{/historico}">
+                    <svg th:replace="~{components/icons :: icono('grafica')}"></svg> Histórico</a>
+                <span class="nav-item pronto" aria-disabled="true">
+                    <svg th:replace="~{components/icons :: icono('tarjeta')}"></svg> Pagos
+                    <span class="sello-pronto">Pronto</span></span>
+            </nav>
+            <div class="sidebar-pie">
+                <div class="plan"><strong>Plan Productor</strong>S/ 129 al mes</div>
+                <div class="usuario" sec:authorize="isAuthenticated()">
+                    <span class="avatar" aria-hidden="true"
+                          th:text="${#strings.substring(#authentication.name, 0, 1)}">a</span>
+                    <span class="usuario-correo" sec:authentication="name"
+                          th:title="${#authentication.name}">usuario@correo.com</span>
+                    <form th:action="@{/logout}" method="post">
+                        <button type="submit" class="salir" title="Cerrar sesión">
+                            <svg th:replace="~{components/icons :: icono('salir')}"></svg>
+                            <span class="solo-lector">Cerrar sesión</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
     </aside>
 </body>
 

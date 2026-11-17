@@ -2,23 +2,56 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{components/layout :: head('Ingresar')}"></head>
 <body class="publico">
-<div th:replace="~{components/layout :: topPublico}"></div>
-<main class="auth-card">
-    <h1>AgroPiura IoT</h1>
-    <p class="auth-sub">Ingresa para ver tus parcelas</p>
-    <p class="alerta exito" th:if="${param.registrado}">Cuenta creada. Ingresa con tu correo y contraseña.</p>
-    <p class="alerta error" th:if="${param.error}">Correo o contraseña incorrectos.</p>
-    <form th:action="@{/login}" method="post" class="form">
-        <label>Correo electrónico
-            <input type="email" name="username" placeholder="nombre@correo.com" required maxlength="150" autofocus>
-        </label>
-        <label>Contraseña
-            <input type="password" name="password" placeholder="••••••••" required>
-        </label>
-        <div class="olvido"><span>¿Olvidaste tu contraseña? Disponible pronto</span></div>
-        <button class="btn" type="submit">Ingresar</button>
-    </form>
-    <p class="auth-alt">¿No tienes cuenta? <a th:href="@{/registro}">Crear cuenta</a></p>
-</main>
+<div class="auth">
+    <section class="auth-lado" aria-hidden="true">
+        <a class="marca" th:href="@{/}" tabindex="-1">
+            <span class="marca-sello"><svg th:replace="~{components/icons :: sello}"></svg></span> AgroPiura IoT</a>
+        <div>
+            <h2>Tus parcelas, dentro de su franja.</h2>
+            <p>Cada lectura se compara con el mínimo y el máximo que definiste para el cultivo.</p>
+        </div>
+        <div class="auth-muestra">
+            <strong>Mango · Parcela A — humedad 28 %</strong>
+            <div class="banda grande" data-estado="alerta" style="--min:35;--max:80;--valor:28">
+                <span class="banda-rango"></span><span class="banda-aguja"></span></div>
+            <div class="banda-regla"><span>0 %</span><span>franja ideal 35–80 %</span><span>100 %</span></div>
+        </div>
+        <div class="greca"></div>
+    </section>
+
+    <main class="auth-principal">
+        <div class="auth-principal-top">
+            <a class="marca" th:href="@{/}"><span class="marca-sello"><svg th:replace="~{components/icons :: sello}"></svg></span> AgroPiura IoT</a>
+            <a class="btn fantasma" th:href="@{/}"><svg th:replace="~{components/icons :: icono('atras')}"></svg> Volver al inicio</a>
+        </div>
+        <div class="auth-form">
+            <h1>Ingresa a tu cuenta</h1>
+            <p class="auth-sub">Revisa el estado de tus parcelas y tus alertas.</p>
+
+            <p class="aviso ok" role="status" th:if="${param.registrado}">
+                <svg th:replace="~{components/icons :: icono('check-circulo')}"></svg>
+                <span>Cuenta creada. Ingresa con tu correo y contraseña.</span></p>
+            <p class="aviso error" role="alert" th:if="${param.error}">
+                <svg th:replace="~{components/icons :: icono('alerta')}"></svg>
+                <span>Correo o contraseña incorrectos. Revisa los datos e inténtalo de nuevo.</span></p>
+
+            <form th:action="@{/login}" method="post" class="form">
+                <label class="campo">
+                    <span>Correo electrónico</span>
+                    <input type="email" name="username" placeholder="nombre@correo.com" required maxlength="150"
+                           autocomplete="username" autocapitalize="none" autocorrect="off" autofocus>
+                </label>
+                <label class="campo">
+                    <span class="campo-ayuda"><span>Contraseña</span><small>¿La olvidaste? Recuperación disponible pronto</small></span>
+                    <input type="password" name="password" placeholder="••••••••" required autocomplete="current-password">
+                </label>
+                <div class="form-acciones">
+                    <button class="btn primario bloque" type="submit">Ingresar</button>
+                </div>
+            </form>
+            <p class="auth-alt">¿No tienes cuenta? <a th:href="@{/registro}">Crea una gratis</a></p>
+        </div>
+    </main>
+</div>
 </body>
 </html>

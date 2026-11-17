@@ -1,45 +1,88 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{components/layout :: head('Portada')}"></head>
+<head th:replace="~{components/layout :: head('Monitoreo de cultivos en Piura')}"></head>
 <body class="publico">
-<div th:replace="~{components/layout :: topPublico}"></div>
-<main class="portada">
+<a class="saltar" href="#contenido">Saltar al contenido</a>
+<header th:replace="~{components/layout :: topPublico}"></header>
+<main class="portada" id="contenido">
+    <p class="aviso info" role="status" th:if="${param.logout}" style="margin-top:1rem">
+        <svg th:replace="~{components/icons :: icono('check-circulo')}"></svg><span>Cerraste sesión correctamente.</span></p>
+
     <section class="hero">
-        <div>
+        <div class="hero-texto" data-entrar>
             <h1>Del dato a la decisión, en tiempo real</h1>
-            <p>Mide la humedad y la temperatura de tus parcelas en Piura y
-                recibe una alerta antes de perder la cosecha.</p>
-            <div class="acciones">
-                <a class="btn" th:href="@{/login}">Ingresar</a>
-                <a class="btn fantasma" th:href="@{/registro}">Crear cuenta</a>
+            <p>Mide la humedad y la temperatura de tus parcelas en Piura y recibe una alerta antes de perder la cosecha.</p>
+            <div class="hero-acciones">
+                <a class="btn primario" th:href="@{/registro}">Crear cuenta de productor</a>
+                <a class="btn secundario" th:href="@{/login}">Ingresar</a>
+            </div>
+            <div class="hero-hecho">
+                <span><svg th:replace="~{components/icons :: icono('nodo')}"></svg> Nodos sensores ESP32</span>
+                <span><svg th:replace="~{components/icons :: icono('ajustes')}"></svg> Umbrales por cultivo</span>
+                <span><svg th:replace="~{components/icons :: icono('descargar')}"></svg> Exporta a Excel</span>
             </div>
         </div>
-        <div class="demo-card">
-            <div class="parcela">Mango · Parcela A</div>
-            <div class="demo-fila">
-                <div>
-                    <p class="demo-valor">28%</p>
-                    <span class="badge badge-alerta">Humedad baja</span>
-                </div>
-                <div class="donut" style="--p: 28"><span>28%</span></div>
+
+        <!-- Vista de ejemplo de la app (datos ilustrativos) -->
+        <div class="app-marco" data-entrar-marco aria-label="Vista de ejemplo del resumen de la app" role="img">
+            <div class="app-marco-barra">
+                <span class="marca"><span class="marca-sello"><svg th:replace="~{components/icons :: sello}"></svg></span>Resumen de hoy</span>
+                <span class="sincro">hace 8 min</span>
             </div>
-            <div class="demo-pie">Umbral mínimo: 35% · hace 8 min</div>
+            <div class="app-marco-alerta">
+                <svg th:replace="~{components/icons :: icono('alerta')}"></svg>
+                <div><strong>Humedad baja en Mango · Parcela A</strong>28 % de humedad de suelo, por debajo del mínimo de 35 %</div>
+            </div>
+            <ul class="lista-cultivos">
+                <li><div class="cultivo-fila">
+                    <div><div class="cultivo-nombre">Mango · Parcela A</div><span class="cultivo-sub">Chulucanas</span></div>
+                    <div class="cultivo-humedad">
+                        <div class="banda" data-estado="alerta" style="--min:35;--max:80;--valor:28"><span class="banda-rango"></span><span class="banda-aguja"></span></div>
+                        <span class="cultivo-humedad-valor">28 %</span>
+                    </div>
+                    <div><span class="estado alerta">Alerta</span></div>
+                </div></li>
+                <li><div class="cultivo-fila">
+                    <div><div class="cultivo-nombre">Limón · Lote 2</div><span class="cultivo-sub">Tambogrande</span></div>
+                    <div class="cultivo-humedad">
+                        <div class="banda" data-estado="ok" style="--min:35;--max:80;--valor:54"><span class="banda-rango"></span><span class="banda-aguja"></span></div>
+                        <span class="cultivo-humedad-valor">54 %</span>
+                    </div>
+                    <div><span class="estado ok">Normal</span></div>
+                </div></li>
+                <li><div class="cultivo-fila">
+                    <div><div class="cultivo-nombre">Arroz · Poza norte</div><span class="cultivo-sub">Sullana</span></div>
+                    <div class="cultivo-humedad">
+                        <div class="banda" data-estado="ok" style="--min:35;--max:80;--valor:71"><span class="banda-rango"></span><span class="banda-aguja"></span></div>
+                        <span class="cultivo-humedad-valor">71 %</span>
+                    </div>
+                    <div><span class="estado ok">Normal</span></div>
+                </div></li>
+            </ul>
         </div>
     </section>
-    <section class="tarjetas">
-        <article>
+
+    <section class="capacidades" aria-label="Qué hace AgroPiura IoT">
+        <article class="capacidad">
+            <span class="enlace-icono"><svg th:replace="~{components/icons :: icono('nodo')}"></svg></span>
             <h2>Sensores por parcela</h2>
             <p>Cada cultivo reporta humedad y temperatura sin cables ni visitas diarias.</p>
         </article>
-        <article>
+        <article class="capacidad">
+            <span class="enlace-icono"><svg th:replace="~{components/icons :: icono('campana')}"></svg></span>
             <h2>Alertas al instante</h2>
-            <p>Defines el umbral y avisamos por la app o por SMS cuando se supera.</p>
+            <p>Defines el mínimo y el máximo de cada variable y te avisamos en la app cuando una lectura sale de la franja.</p>
         </article>
-        <article>
+        <article class="capacidad">
+            <span class="enlace-icono"><svg th:replace="~{components/icons :: icono('grafica')}"></svg></span>
             <h2>Histórico claro</h2>
             <p>Compara semanas, detecta patrones y exporta a Excel (.xlsx).</p>
         </article>
     </section>
 </main>
+<footer class="pie-publico">
+    <span>AgroPiura IoT · Monitoreo de cultivos en Piura</span>
+    <span>Mapas © OpenStreetMap · Clima: OpenWeatherMap</span>
+</footer>
 </body>
 </html>

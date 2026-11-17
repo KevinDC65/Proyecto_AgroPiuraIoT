@@ -1,146 +1,162 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
-
 <head th:replace="~{components/layout :: head('Histórico')}"></head>
-
 <body class="app">
-    <div class="shell">
-        <aside th:replace="~{components/layout :: sidebar('historico')}"></aside>
-        <main class="principal">
-            <span class="migas">Inicio > Cultivos > <span th:text="${cultivo.nombre}"></span> > Histórico</span>
-            <h1 th:text="'Histórico de ' + ${cultivo.nombre}"></h1>
-
-            <div class="card" style="margin-bottom:1rem">
-                <h2>Filtrar</h2>
-                <form method="get" class="form inline" style="gap:0.8rem">
-                    <label>Desde <input type="date" name="desde" th:value="${desde}"></label>
-                    <label>Hasta <input type="date" name="hasta" th:value="${hasta}"></label>
-                    <button class="btn" type="submit">Aplicar</button>
-                    <a class="btn claro" th:href="@{/cultivos/{id}/historico(id=${cultivo.idCultivo})}">Limpiar</a>
-                    <a class="btn claro"
-                        th:href="@{/cultivos/{id}/historico/exportar.xlsx(id=${cultivo.idCultivo}, desde=${desde}, hasta=${hasta})}">Exportar
-                        Excel</a>
-                </form>
+<a class="saltar" href="#contenido">Saltar al contenido</a>
+<div class="shell">
+    <aside th:replace="~{components/layout :: sidebar('historico')}"></aside>
+    <main class="principal" id="contenido">
+        <header class="encabezado">
+            <div class="encabezado-texto">
+                <nav class="migas" aria-label="Ruta">
+                    <ol><li><a th:href="@{/dashboard}">Inicio</a></li><li><a th:href="@{/cultivos}">Cultivos</a></li>
+                        <li><a th:href="@{/cultivos/{id}(id=${cultivo.idCultivo})}" th:text="${cultivo.nombre}">Mango</a></li>
+                        <li aria-current="page">Histórico</li></ol>
+                </nav>
+                <h1 th:text="'Histórico de ' + ${cultivo.nombre}">Histórico</h1>
             </div>
+            <div class="encabezado-acciones">
+                <a class="btn secundario" th:href="@{/cultivos/{id}/umbrales(id=${cultivo.idCultivo})}">
+                    <svg th:replace="~{components/icons :: icono('ajustes')}"></svg> Umbrales</a>
+            </div>
+        </header>
 
-            <h2 th:if="${not #lists.isEmpty(resumen)}" style="color:#fff; margin:0.5rem 0 0.75rem;">Resumen del rango
-            </h2>
+        <p class="aviso error" role="alert" th:if="${error}">
+            <svg th:replace="~{components/icons :: icono('alerta')}"></svg><span th:text="${error}"></span></p>
 
-            <section class="kpis auto" th:if="${not #lists.isEmpty(resumen)}">
-                <article class="card kpi" th:each="r : ${resumen}">
-                    <small th:text="${#strings.capitalize(#strings.replace(r.variable, '_', ' '))}"></small>
+        <section class="panel" aria-label="Filtro por fechas" style="margin-bottom:1.25rem">
+            <form method="get" class="filtros">
+                <label class="campo"><span>Desde</span><input type="date" name="desde" th:value="${desde}"></label>
+                <label class="campo"><span>Hasta</span><input type="date" name="hasta" th:value="${hasta}"></label>
+                <button class="btn" type="submit"><svg th:replace="~{components/icons :: icono('filtro')}"></svg> Aplicar</button>
+                <a class="btn fantasma" th:href="@{/cultivos/{id}/historico(id=${cultivo.idCultivo})}" th:if="${desde != null or hasta != null}">Limpiar</a>
+                <a class="btn secundario empuje"
+                   th:href="@{/cultivos/{id}/historico/exportar.xlsx(id=${cultivo.idCultivo}, desde=${desde}, hasta=${hasta})}">
+                    <svg th:replace="~{components/icons :: icono('descargar')}"></svg> Exportar Excel</a>
+            </form>
+        </section>
 
-                    <strong th:text="${r.promedio != null
-                ? #numbers.formatDecimal(r.promedio, 1, 2) + ' ' + r.unidad
-                : '-'}"></strong>
+        <section class="variables" th:if="${not #lists.isEmpty(resumen)}" aria-label="Resumen del rango">
+            <article class="panel variable" th:each="r : ${resumen}">
+                <div class="variable-cabeza">
+                    <h2 th:text="${#strings.capitalize(#strings.replace(r.variable, '_', ' '))}">Humedad suelo</h2>
+                    <span class="suave" th:text="${r.total} + ' lecturas'">24 lecturas</span>
+                </div>
+                <strong class="metrica-valor" th:if="${r.promedio != null}">
+                    <th:block th:text="${#numbers.formatDecimal(r.promedio, 1, 1)}">47,2</th:block><small th:text="${r.unidad}">%</small></strong>
+                <strong class="metrica-valor suave" th:unless="${r.promedio != null}">—</strong>
+                <div class="banda" aria-hidden="true"
+                     th:if="${r.maximo != null and r.minimo != null and r.promedio != null and r.maximo.signum() > 0}"
+                     th:style="|--min:${r.minimo};--max:${r.maximo};--valor:${r.promedio};--escala:calc(${r.maximo} * 1.25)|">
+                    <span class="banda-rango"></span><span class="banda-aguja"></span>
+                </div>
+                <div class="variable-pie">
+                    <span>Mín. <th:block th:text="${r.minimo != null} ? ${#numbers.formatDecimal(r.minimo, 1, 1)} : '—'">31,0</th:block>
+                        · Máx. <th:block th:text="${r.maximo != null} ? ${#numbers.formatDecimal(r.maximo, 1, 1)} : '—'">62,5</th:block></span>
+                    <span th:classappend="${r.fueraDeRango > 0} ? 'fuera'" th:text="${r.fueraDeRango} + ' fuera de rango'">0 fuera de rango</span>
+                </div>
+            </article>
+        </section>
 
-                    <small>
-                        Mín.
-                        <span th:text="${r.minimo != null
-                    ? #numbers.formatDecimal(r.minimo, 1, 2)
-                    : '-'}"></span>
-                        · Máx.
-                        <span th:text="${r.maximo != null
-                    ? #numbers.formatDecimal(r.maximo, 1, 2)
-                    : '-'}"></span>
-                    </small>
-
-                    <small th:text="${r.total} + ' lecturas · ' + ${r.fueraDeRango} + ' fuera de rango'"></small>
-                </article>
-            </section>
-
-            <div class="card card-grafica">
-                <h2>Serie temporal</h2>
-                <p th:if="${#lists.isEmpty(puntos)}">Sin lecturas en el rango seleccionado.</p>
-
-                <div class="chart-contenedor" th:unless="${#lists.isEmpty(puntos)}">
-                    <canvas id="chartHistorico"></canvas>
+        <section class="panel" aria-labelledby="t-serie">
+            <div class="panel-cabeza">
+                <div>
+                    <h2 id="t-serie">Serie temporal</h2>
+                    <p>Lecturas de cada variable en el rango de fechas seleccionado</p>
                 </div>
             </div>
+            <div class="vacio" th:if="${#lists.isEmpty(puntos)}">
+                <span class="vacio-icono"><svg th:replace="~{components/icons :: icono('grafica')}"></svg></span>
+                <strong>Sin lecturas en este rango</strong>
+                <p>Amplía las fechas del filtro o usa “Simular lectura” en el detalle del cultivo para generar datos de prueba.</p>
+                <a class="btn secundario" th:href="@{/cultivos/{id}(id=${cultivo.idCultivo})}">Ir al detalle del cultivo</a>
+            </div>
+            <div class="panel-cuerpo" th:unless="${#lists.isEmpty(puntos)}">
+                <div class="grafica"><canvas id="chartHistorico" role="img" aria-label="Gráfica de lecturas por variable a lo largo del tiempo"></canvas></div>
+            </div>
+        </section>
 
-            <div class="card">
-                <h2>Tabla de lecturas</h2>
-                <p th:if="${#lists.isEmpty(puntos)}">No hay lecturas registradas.</p>
-                <table class="tabla" th:unless="${#lists.isEmpty(puntos)}">
-                    <thead>
-                        <tr>
-                            <th>Fecha y hora</th>
-                            <th>Variable</th>
-                            <th>Valor</th>
-                            <th>Unidad</th>
-                            <th>Estado</th>
-                        </tr>
-                    </thead>
+        <section class="panel" aria-labelledby="t-lecturas" th:unless="${#lists.isEmpty(puntos)}">
+            <div class="panel-cabeza">
+                <h2 id="t-lecturas">Lecturas</h2>
+                <span class="suave" th:text="${#lists.size(puntos)} + ' registros'">48 registros</span>
+            </div>
+            <div class="tabla-marco alto">
+                <table class="tabla apilable">
+                    <thead><tr><th>Fecha y hora</th><th>Variable</th><th class="der">Valor</th><th>Estado</th></tr></thead>
                     <tbody>
-                        <tr th:each="p : ${puntos}">
-                            <td th:text="${p.fechaHora}"></td>
-                            <td th:text="${p.variable}"></td>
-                            <td th:text="${p.valor}"></td>
-                            <td th:text="${p.unidad}"></td>
-                            <td>
-                                <span class="badge" th:classappend="${p.fueraDeRango} ? 'badge-alerta' : 'badge-ok'"
-                                    th:text="${p.fueraDeRango} ? 'FUERA DE RANGO' : 'dentro de rango'"></span>
-                            </td>
-                        </tr>
+                    <tr th:each="p : ${puntos}">
+                        <td data-etiqueta="Fecha" class="num" th:text="${p.fechaHora}">17/11 08:40</td>
+                        <td data-etiqueta="Variable" th:text="${#strings.capitalize(#strings.replace(p.variable, '_', ' '))}">Humedad suelo</td>
+                        <td data-etiqueta="Valor" class="der num" th:text="${#numbers.formatDecimal(p.valor, 1, 2)} + ' ' + ${p.unidad}">48,00 %</td>
+                        <td data-etiqueta="Estado">
+                            <span class="estado alerta" th:if="${p.fueraDeRango}">Fuera de rango</span>
+                            <span class="estado ok" th:unless="${p.fueraDeRango}">En rango</span>
+                        </td>
+                    </tr>
                     </tbody>
                 </table>
             </div>
+        </section>
+    </main>
+</div>
 
-            <p><a style="color:#fff" th:href="@{/cultivos/{id}(id=${cultivo.idCultivo})}">Volver al detalle del
-                    cultivo</a></p>
-        </main>
-    </div>
-
-    <script th:src="@{/js/chart.umd.min.js}" th:unless="${#lists.isEmpty(puntos)}"></script>
-
-    <script th:unless="${#lists.isEmpty(puntos)}" th:inline="javascript">
-        /*<![CDATA[*/
-        const datos = /*[[${puntos}]]*/[];
-        const etiquetas = datos.map(p => p.fechaHora);
+<script th:src="@{/js/chart.umd.min.js}" th:unless="${#lists.isEmpty(puntos)}"></script>
+<script th:unless="${#lists.isEmpty(puntos)}" th:inline="javascript">
+    /*<![CDATA[*/
+    (function () {
+        const datos = /*[[${puntos}]]*/ [];
+        const css = getComputedStyle(document.documentElement);
+        const v = (n) => css.getPropertyValue(n).trim();
+        const colores = [v('--serie-1'), v('--serie-2'), v('--serie-3'), v('--serie-4')];
+        const etiquetas = [...new Set(datos.map(p => p.fechaHora))].sort();
         const series = {};
-
         datos.forEach(p => {
-            if (!series[p.variable]) series[p.variable] = [];
-            series[p.variable].push(p.valor);
+            (series[p.variable] ||= {})[p.fechaHora] = p.valor;
         });
+        const nombre = (s) => (s.charAt(0).toUpperCase() + s.slice(1)).replaceAll('_', ' ');
 
-        const colores = ['#0d9488', '#ea580c', '#7c3aed', '#e11d48'];
-        let i = 0;
+        Chart.defaults.font.family = v('--fuente');
+        Chart.defaults.font.size = 12;
+        Chart.defaults.color = v('--tinta-suave');
+
         new Chart(document.getElementById('chartHistorico'), {
             type: 'line',
             data: {
                 labels: etiquetas,
-                datasets: Object.entries(series).map(([nombre, valores]) => ({
-                    label: nombre,
-                    data: valores,
-                    borderColor: colores[i++ % colores.length],
-                    backgroundColor: colores[i % colores.length] + '33',
-                    tension: 0.2,
-                    fill: true
+                datasets: Object.entries(series).map(([variable, valores], i) => ({
+                    label: nombre(variable),
+                    data: etiquetas.map(e => valores[e] ?? null),
+                    borderColor: colores[i % colores.length],
+                    backgroundColor: colores[i % colores.length],
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    pointHoverRadius: 4,
+                    tension: 0.25,
+                    spanGaps: true
                 }))
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                layout: {
-                    padding: { bottom: 8 }
-                },
-                plugins: { legend: { display: true } },
-                scales: {
-                    x: {
-                        ticks: {
-                            autoSkip: true,
-                            maxTicksLimit: 8,
-                            maxRotation: 45,
-                            minRotation: 45
-                        }
+                interaction: { mode: 'index', intersect: false },
+                animation: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? false : { duration: 400 },
+                plugins: {
+                    legend: { position: 'top', align: 'start', labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true, pointStyle: 'rectRounded', padding: 16 } },
+                    tooltip: {
+                        backgroundColor: v('--ahumado'), titleColor: v('--tinta-clara'), bodyColor: v('--tinta-clara'),
+                        padding: 10, cornerRadius: 8, boxPadding: 4, usePointStyle: true
                     }
+                },
+                scales: {
+                    x: { grid: { display: false }, border: { color: v('--linea') },
+                         ticks: { autoSkip: true, maxTicksLimit: 8, maxRotation: 0 } },
+                    y: { grid: { color: v('--linea-suave') }, border: { display: false } }
                 }
             }
         });
-        /*]]>*/
-    </script>
-
+    })();
+    /*]]>*/
+</script>
 </body>
-
 </html>

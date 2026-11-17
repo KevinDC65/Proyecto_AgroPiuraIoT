@@ -2,68 +2,111 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{components/layout :: head('Umbrales')}"></head>
 <body class="app">
+<a class="saltar" href="#contenido">Saltar al contenido</a>
 <div class="shell">
     <aside th:replace="~{components/layout :: sidebar('umbrales')}"></aside>
-    <main class="principal">
-        <span class="migas">Inicio &gt; Cultivos &gt; <span th:text="${cultivo.nombre}"></span> &gt; Umbrales</span>
-        <h1 th:text="'Umbrales de ' + ${cultivo.nombre}"></h1>
+    <main class="principal" id="contenido">
+        <header class="encabezado">
+            <div class="encabezado-texto">
+                <nav class="migas" aria-label="Ruta">
+                    <ol><li><a th:href="@{/dashboard}">Inicio</a></li><li><a th:href="@{/cultivos}">Cultivos</a></li>
+                        <li><a th:href="@{/cultivos/{id}(id=${cultivo.idCultivo})}" th:text="${cultivo.nombre}">Mango</a></li>
+                        <li aria-current="page">Umbrales</li></ol>
+                </nav>
+                <h1 th:text="'Umbrales de ' + ${cultivo.nombre}">Umbrales</h1>
+                <p class="encabezado-meta">Cuando una lectura sale de la franja entre el mínimo y el máximo, se genera una alerta.</p>
+            </div>
+            <div class="encabezado-acciones">
+                <a class="btn secundario" th:href="@{/cultivos/{id}/historico(id=${cultivo.idCultivo})}">
+                    <svg th:replace="~{components/icons :: icono('grafica')}"></svg> Ver histórico</a>
+            </div>
+        </header>
 
-        <div class="card">
-            <h2>Umbrales configurados</h2>
-            <p th:if="${#lists.isEmpty(umbrales)}">Aún no hay umbrales configurados para este cultivo.</p>
-            <table class="tabla" th:unless="${#lists.isEmpty(umbrales)}">
-                <thead><tr><th>Variable</th><th>Mínimo</th><th>Máximo</th><th></th></tr></thead>
-                <tbody>
-                <tr th:each="u : ${umbrales}">
-                    <td th:text="${u.tipoSensor.obtenerNombre()}"></td>
-                    <td th:text="${u.valorMinimo}"></td>
-                    <td th:text="${u.valorMaximo}"></td>
-                    <td>
-                        <a class="btn claro chico"
-                           th:href="@{/cultivos/{id}/umbrales(id=${cultivo.idCultivo}, editar=${u.idUmbral})}">Editar</a>
-                        <form th:action="@{/cultivos/{id}/umbrales/{idU}/eliminar(id=${cultivo.idCultivo}, idU=${u.idUmbral})}"
-                              method="post" class="inline"
-                              onsubmit="return confirm('¿Eliminar este umbral?');">
-                            <button class="btn claro chico" type="submit">Eliminar</button>
-                        </form>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <div class="card">
-            <h2 th:text="${umbralEditado} != null ? 'Editar umbral' : 'Nuevo umbral'"></h2>
-            <form th:action="@{/cultivos/{id}/umbrales(id=${cultivo.idCultivo})}" method="post" class="form"
-                  th:object="${form}">
-                <label>Variable monitoreada
-                    <select name="idTipoSensor" required>
-                        <option value="" disabled th:selected="*{idTipoSensor} == null">Seleccione una variable</option>
-                        <option th:each="t : ${tiposSensor}"
-                                th:value="${t.idTipoSensor}"
-                                th:text="${t.obtenerNombre()}"
-                                th:selected="*{idTipoSensor} != null and *{idTipoSensor} == ${t.idTipoSensor}"></option>
-                    </select>
-                </label>
-                <label>Valor mínimo
-                    <input type="number" name="valorMinimo" step="0.01" min="0" max="1000" required
-                           th:value="*{valorMinimo}" placeholder="Ej. 20">
-                </label>
-                <label>Valor máximo
-                    <input type="number" name="valorMaximo" step="0.01" min="0" max="1000" required
-                           th:value="*{valorMaximo}" placeholder="Ej. 80">
-                </label>
-                <p class="alerta error" th:if="${#fields.hasErrors('idTipoSensor')}" th:errors="*{idTipoSensor}"></p>
-                <p class="alerta error" th:if="${#fields.hasErrors('valorMinimo')}" th:errors="*{valorMinimo}"></p>
-                <p class="alerta error" th:if="${#fields.hasErrors('valorMaximo')}" th:errors="*{valorMaximo}"></p>
-                <div>
-                    <button class="btn" type="submit"
-                            th:text="${umbralEditado} != null ? 'Guardar cambios' : 'Agregar umbral'"></button>
+        <div class="rejilla principal-lateral">
+            <section class="panel" aria-labelledby="t-umbrales">
+                <div class="panel-cabeza"><h2 id="t-umbrales">Umbrales configurados</h2></div>
+                <div class="vacio" th:if="${#lists.isEmpty(umbrales)}">
+                    <span class="vacio-icono"><svg th:replace="~{components/icons :: icono('ajustes')}"></svg></span>
+                    <strong>Este cultivo aún no tiene umbrales</strong>
+                    <p>Sin umbrales no se generan alertas. Empieza por la humedad de suelo con el formulario de la derecha.</p>
                 </div>
-            </form>
-        </div>
+                <div class="tabla-marco" th:unless="${#lists.isEmpty(umbrales)}">
+                    <table class="tabla apilable">
+                        <thead><tr><th>Variable</th><th>Franja permitida</th><th class="der">Mínimo</th><th class="der">Máximo</th><th><span class="solo-lector">Acciones</span></th></tr></thead>
+                        <tbody>
+                        <tr th:each="u : ${umbrales}">
+                            <td class="td-titulo"><span class="celda-principal" th:text="${#strings.capitalize(#strings.replace(u.tipoSensor.obtenerNombre(), '_', ' '))}">Humedad de suelo</span></td>
+                            <td data-etiqueta="Franja">
+                                <div class="banda umbral-banda" aria-hidden="true"
+                                     th:style="|--min:${u.valorMinimo};--max:${u.valorMaximo};--escala:calc(${u.valorMaximo} * 1.25)|">
+                                    <span class="banda-rango"></span>
+                                </div>
+                            </td>
+                            <td data-etiqueta="Mínimo" class="der num" th:text="${#numbers.formatDecimal(u.valorMinimo, 1, 2)}">35</td>
+                            <td data-etiqueta="Máximo" class="der num" th:text="${#numbers.formatDecimal(u.valorMaximo, 1, 2)}">80</td>
+                            <td class="td-acciones">
+                                <div class="celda-acciones" th:if="${puedeAdministrar}">
+                                    <a class="btn secundario chico"
+                                       th:href="@{/cultivos/{id}/umbrales(id=${cultivo.idCultivo}, editar=${u.idUmbral})}">
+                                        <svg th:replace="~{components/icons :: icono('editar')}"></svg> Editar</a>
+                                    <form th:action="@{/cultivos/{id}/umbrales/{idU}/eliminar(id=${cultivo.idCultivo}, idU=${u.idUmbral})}"
+                                          method="post" class="inline"
+                                          th:attr="data-confirmar='¿Eliminar el umbral de ' + ${u.tipoSensor.obtenerNombre()} + '? Dejarán de generarse alertas para esta variable.'">
+                                        <button class="btn peligro chico" type="submit">
+                                            <svg th:replace="~{components/icons :: icono('borrar')}"></svg> Eliminar</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
 
-        <p><a style="color:#fff" th:href="@{/cultivos/{id}(id=${cultivo.idCultivo})}">Volver al detalle del cultivo</a></p>
+            <section class="panel" aria-labelledby="t-form" id="formulario" th:if="${puedeAdministrar}">
+                <div class="panel-cabeza">
+                    <h2 id="t-form" th:text="${umbralEditado} != null ? 'Editar umbral' : 'Nuevo umbral'">Nuevo umbral</h2>
+                </div>
+                <form th:action="@{/cultivos/{id}/umbrales(id=${cultivo.idCultivo})}" method="post" class="form panel-cuerpo"
+                      th:object="${form}">
+                    <label class="campo" th:classappend="${#fields.hasErrors('idTipoSensor')} ? ' con-error'">
+                        <span>Variable monitoreada</span>
+                        <select name="idTipoSensor" required>
+                            <option value="" disabled th:selected="*{idTipoSensor} == null">Selecciona una variable</option>
+                            <option th:each="t : ${tiposSensor}"
+                                    th:value="${t.idTipoSensor}"
+                                    th:text="${#strings.capitalize(#strings.replace(t.obtenerNombre(), '_', ' '))}"
+                                    th:selected="*{idTipoSensor} != null and *{idTipoSensor} == ${t.idTipoSensor}"></option>
+                        </select>
+                        <span class="error" th:if="${#fields.hasErrors('idTipoSensor')}" th:errors="*{idTipoSensor}"></span>
+                    </label>
+                    <div class="fila">
+                        <label class="campo" th:classappend="${#fields.hasErrors('valorMinimo')} ? ' con-error'">
+                            <span>Mínimo</span>
+                            <input type="number" name="valorMinimo" step="0.01" min="0" max="1000" required inputmode="decimal"
+                                   th:value="*{valorMinimo}" placeholder="Ej. 35">
+                            <span class="error" th:if="${#fields.hasErrors('valorMinimo')}" th:errors="*{valorMinimo}"></span>
+                        </label>
+                        <label class="campo" th:classappend="${#fields.hasErrors('valorMaximo')} ? ' con-error'">
+                            <span>Máximo</span>
+                            <input type="number" name="valorMaximo" step="0.01" min="0" max="1000" required inputmode="decimal"
+                                   th:value="*{valorMaximo}" placeholder="Ej. 80">
+                            <span class="error" th:if="${#fields.hasErrors('valorMaximo')}" th:errors="*{valorMaximo}"></span>
+                        </label>
+                    </div>
+                    <p class="aviso error" role="alert" th:if="${#fields.hasGlobalErrors()}">
+                        <svg th:replace="~{components/icons :: icono('alerta')}"></svg>
+                        <span th:each="err : ${#fields.globalErrors()}" th:text="${err}"></span></p>
+                    <p class="campo"><small>Si ya existe un umbral para la variable, se actualiza en lugar de duplicarse.</small></p>
+                    <div class="form-acciones">
+                        <button class="btn primario" type="submit"
+                                th:text="${umbralEditado} != null ? 'Guardar cambios' : 'Agregar umbral'">Agregar umbral</button>
+                        <a class="btn fantasma" th:if="${umbralEditado} != null"
+                           th:href="@{/cultivos/{id}/umbrales(id=${cultivo.idCultivo})}">Cancelar</a>
+                    </div>
+                </form>
+            </section>
+        </div>
     </main>
 </div>
 </body>

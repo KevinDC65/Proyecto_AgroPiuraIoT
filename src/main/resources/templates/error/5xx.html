@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{components/layout :: head('Error del servidor')}"></head>
+<body class="publico">
+<header th:replace="~{components/layout :: topPublico}"></header>
+<main class="error-pagina">
+    <span class="error-codigo" th:text="${status} ?: '500'">500</span>
+    <h1>Algo salió mal de nuestro lado</h1>
+    <p>El error quedó registrado. Inténtalo de nuevo en unos minutos.</p>
+    <p class="error-ruta" th:if="${path}" th:text="${path}">/ruta</p>
+    <div class="form-acciones">
+        <a class="btn primario" th:href="@{/dashboard}">Ir al resumen</a>
+        <a class="btn secundario" th:href="@{/}">Volver al inicio</a>
+    </div>
+</main>
+</body>
+</html>

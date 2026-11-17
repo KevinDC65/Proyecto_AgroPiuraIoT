@@ -1,62 +1,144 @@
 <!DOCTYPE html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{components/layout :: head('Dashboard')}"></head>
+<head th:replace="~{components/layout :: head('Resumen')}"></head>
 <body class="app">
+<a class="saltar" href="#contenido">Saltar al contenido</a>
 <div class="shell">
     <aside th:replace="~{components/layout :: sidebar('dashboard')}"></aside>
-    <main class="principal">
-        <div class="fila-titulo">
-            <span class="migas">Inicio &gt; Dashboard</span>
-            <span class="sincro" th:text="'Última sincronización: ' + ${resumen.ultimaSincronizacion}"></span>
+    <main class="principal" id="contenido">
+        <header class="encabezado">
+            <div class="encabezado-texto">
+                <h1>Resumen de hoy</h1>
+                <span class="sincro" th:text="'Última sincronización ' + ${resumen.ultimaSincronizacion}">Última sincronización hace 8 min</span>
+            </div>
+            <div class="encabezado-acciones">
+                <a class="btn secundario" th:href="@{/mapa}">
+                    <svg th:replace="~{components/icons :: icono('mapa')}"></svg> Ver mapa</a>
+                <a class="btn primario" th:href="@{/cultivos/nuevo}">
+                    <svg th:replace="~{components/icons :: icono('mas')}"></svg> Nuevo cultivo</a>
+            </div>
+        </header>
+
+        <section class="metricas" aria-label="Indicadores">
+            <a class="metrica" th:href="@{/cultivos}">
+                <span class="metrica-etiqueta"><svg th:replace="~{components/icons :: icono('brote')}"></svg> Cultivos activos</span>
+                <strong class="metrica-valor" th:text="${resumen.cultivosActivos}">3</strong>
+            </a>
+            <a class="metrica" th:href="@{/alertas}" th:classappend="${resumen.alertasActivas > 0} ? ' en-alerta'">
+                <span class="metrica-etiqueta"><svg th:replace="~{components/icons :: icono('campana')}"></svg> Alertas pendientes</span>
+                <strong class="metrica-valor" th:text="${resumen.alertasActivas}">0</strong>
+                <span class="metrica-nota" th:text="${resumen.alertasActivas > 0} ? 'Requieren atención' : 'Todo dentro de rango'">Todo dentro de rango</span>
+            </a>
+            <div class="metrica">
+                <span class="metrica-etiqueta"><svg th:replace="~{components/icons :: icono('gota')}"></svg> Humedad promedio</span>
+                <strong class="metrica-valor" th:if="${resumen.humedadPromedio != null}">
+                    <th:block th:text="${#numbers.formatDecimal(resumen.humedadPromedio, 1, 0)}">48</th:block><small>%</small></strong>
+                <strong class="metrica-valor suave" th:unless="${resumen.humedadPromedio != null}">—</strong>
+            </div>
+            <div class="metrica">
+                <span class="metrica-etiqueta"><svg th:replace="~{components/icons :: icono('termometro')}"></svg> Temperatura promedio</span>
+                <strong class="metrica-valor" th:if="${resumen.temperaturaPromedio != null}">
+                    <th:block th:text="${#numbers.formatDecimal(resumen.temperaturaPromedio, 1, 1)}">27,4</th:block><small>°C</small></strong>
+                <strong class="metrica-valor suave" th:unless="${resumen.temperaturaPromedio != null}">—</strong>
+            </div>
+        </section>
+
+        <div class="rejilla principal-lateral">
+            <section class="panel" aria-labelledby="t-cultivos">
+                <div class="panel-cabeza">
+                    <div>
+                        <h2 id="t-cultivos">Estado por cultivo</h2>
+                        <p>Humedad de suelo frente al rango ideal de 35 % a 80 %</p>
+                    </div>
+                    <a class="btn secundario chico" th:href="@{/cultivos}">Ver todos</a>
+                </div>
+
+                <div class="vacio" th:if="${#lists.isEmpty(resumen.cultivos)}">
+                    <span class="vacio-icono"><svg th:replace="~{components/icons :: icono('brote')}"></svg></span>
+                    <strong>Aún no tienes cultivos</strong>
+                    <p>Registra tu primer cultivo y asígnale un nodo sensor; sus lecturas aparecerán aquí.</p>
+                    <a class="btn primario" th:href="@{/cultivos/nuevo}">Registrar cultivo</a>
+                </div>
+
+                <th:block th:unless="${#lists.isEmpty(resumen.cultivos)}">
+                    <div class="lista-cabeza" aria-hidden="true">
+                        <span>Cultivo</span><span>Humedad de suelo</span><span>Temp.</span><span>Estado</span><span></span>
+                    </div>
+                    <ul class="lista-cultivos">
+                        <li th:each="c : ${resumen.cultivos}">
+                            <a class="cultivo-fila" th:href="@{/cultivos/{id}(id=${c.idCultivo})}">
+                                <div>
+                                    <div class="cultivo-nombre" th:text="${c.nombre}">Mango · Parcela A</div>
+                                    <span class="estado-movil">
+                                        <span class="estado alerta" th:if="${c.estado} == 'ALERTA'">Alerta</span>
+                                        <span class="estado ok" th:if="${c.estado} == 'NORMAL'">Normal</span>
+                                        <span class="estado sin-datos" th:if="${c.estado} == 'SIN_DATOS'">Sin datos</span>
+                                    </span>
+                                </div>
+                                <div class="cultivo-humedad">
+                                    <div class="banda" style="--min:35;--max:80"
+                                         th:style="${c.humedad != null} ? |--min:35;--max:80;--valor:${c.humedad}| : '--min:35;--max:80'"
+                                         th:attr="data-estado=${c.estado == 'ALERTA'} ? 'alerta' : (${c.estado == 'NORMAL'} ? 'ok' : 'sin-datos')">
+                                        <span class="banda-rango"></span>
+                                        <span class="banda-aguja" th:if="${c.humedad != null}"></span>
+                                    </div>
+                                    <span class="cultivo-humedad-valor"
+                                          th:text="${c.humedad != null} ? ${#numbers.formatDecimal(c.humedad, 1, 0)} + ' %' : 'Sensor sin lecturas'">48 %</span>
+                                </div>
+                                <div class="cultivo-temp">
+                                    <th:block th:text="${c.temperatura != null} ? ${#numbers.formatDecimal(c.temperatura, 1, 1)} + ' °C' : '—'">27,4 °C</th:block>
+                                </div>
+                                <div>
+                                    <span class="estado alerta" th:if="${c.estado} == 'ALERTA'">Alerta</span>
+                                    <span class="estado ok" th:if="${c.estado} == 'NORMAL'">Normal</span>
+                                    <span class="estado sin-datos" th:if="${c.estado} == 'SIN_DATOS'">Sin datos</span>
+                                </div>
+                                <span class="cultivo-ir"><svg th:replace="~{components/icons :: icono('chevron')}"></svg></span>
+                            </a>
+                        </li>
+                    </ul>
+                </th:block>
+            </section>
+
+            <div class="pila">
+                <!-- RF-06: clima de terceros. Solo si el proveedor devolvió datos. -->
+                <section class="panel" th:if="${clima} != null" aria-labelledby="t-clima">
+                    <div class="panel-cabeza"><h2 id="t-clima" th:text="'Clima en ' + ${clima.ciudad}">Clima</h2></div>
+                    <div class="panel-cuerpo">
+                        <div class="clima">
+                            <span class="clima-icono"><svg th:replace="~{components/icons :: icono('nube')}"></svg></span>
+                            <span class="clima-temp" th:text="${#numbers.formatDecimal(clima.temperaturaCelsius, 1, 1)} + ' °C'">27,8 °C</span>
+                            <span class="clima-detalle">
+                                <th:block th:text="${clima.condicion}">lluvia ligera</th:block> ·
+                                humedad <th:block th:text="${#numbers.formatDecimal(clima.humedadPorcentaje, 1, 0)} + ' %'">68 %</th:block>
+                            </span>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="panel" aria-labelledby="t-humedad">
+                    <div class="panel-cabeza"><h2 id="t-humedad">Humedad general</h2></div>
+                    <div class="panel-cuerpo">
+                        <div>
+                            <div class="banda grande"
+                                 th:style="${resumen.humedadPromedio != null} ? |--min:35;--max:80;--valor:${resumen.humedadPromedio}| : '--min:35;--max:80'"
+                                 role="img"
+                                 th:attr="aria-label=${resumen.humedadPromedio != null} ? 'Humedad promedio ' + ${#numbers.formatDecimal(resumen.humedadPromedio, 1, 0)} + ' por ciento, rango ideal 35 a 80' : 'Sin lecturas de humedad'">
+                                <span class="banda-rango"></span>
+                                <span class="banda-aguja" th:if="${resumen.humedadPromedio != null}"></span>
+                            </div>
+                            <div class="banda-regla" aria-hidden="true"><span>0 %</span><span>50 %</span><span>100 %</span></div>
+                        </div>
+                        <dl class="dato-lista">
+                            <div><dt>Promedio actual</dt>
+                                <dd th:text="${resumen.humedadPromedio != null} ? ${#numbers.formatDecimal(resumen.humedadPromedio, 1, 1)} + ' %' : '—'">48,0 %</dd></div>
+                            <div><dt>Rango ideal</dt><dd>35 % – 80 %</dd></div>
+                            <div><dt>Última lectura</dt><dd th:text="${resumen.ultimaSincronizacion}">hace 8 min</dd></div>
+                        </dl>
+                    </div>
+                </section>
+            </div>
         </div>
-        <h1>Resumen de hoy</h1>
-        <section class="kpis">
-            <article class="card kpi"><small>Cultivos activos</small><strong th:text="${resumen.cultivosActivos}"></strong></article>
-            <article class="card kpi destacado"><small>Alertas pendientes</small><strong th:text="${resumen.alertasActivas}"></strong></article>
-            <article class="card kpi"><small>Humedad promedio</small><strong th:text="${resumen.humedadPromedio} != null ? ${resumen.humedadPromedio} + '%' : '-'"></strong></article>
-            <article class="card kpi"><small>Temp. promedio</small><strong th:text="${resumen.temperaturaPromedio} != null ? ${resumen.temperaturaPromedio} + '°C' : '-'"></strong></article>
-        </section>
-        <!-- RF-06: clima de terceros. Solo se muestra si el proveedor devolvió datos
-             (requiere cultivo con ubicación y API key de OpenWeatherMap). -->
-        <section class="kpis" th:if="${clima} != null">
-            <article class="card kpi">
-                <small th:text="'Clima · ' + ${clima.ciudad}"></small>
-                <strong th:text="${#numbers.formatDecimal(clima.temperaturaCelsius, 1, 1)} + '°C'"></strong>
-                <small>
-                    <span th:text="'Humedad ' + ${#numbers.formatDecimal(clima.humedadPorcentaje, 1, 0)} + '%'"></span> ·
-                    <span th:text="${clima.condicion}"></span>
-                </small>
-            </article>
-        </section>
-        <section class="paneles">
-            <article class="card">
-                <h2>Humedad general</h2>
-                <div class="demo-fila">
-                    <div class="donut" th:style="'--p:' + (${resumen.humedadPromedio} != null ? ${resumen.humedadPromedio} : 0)">
-                        <span th:text="(${resumen.humedadPromedio} != null ? ${resumen.humedadPromedio} : 0) + '%'"></span>
-                    </div>
-                    <div>
-                        <p><span class="suave">Rango ideal</span><br><strong>35% - 80%</strong></p>
-                        <p><span class="suave">Última lectura</span><br><strong th:text="${resumen.ultimaSincronizacion}"></strong></p>
-                    </div>
-                </div>
-            </article>
-            <article class="panel-vidrio">
-                <h2>Cultivos</h2>
-                <p th:if="${#lists.isEmpty(resumen.cultivos)}">Registra tu primer cultivo para ver datos aquí.</p>
-                <div class="fila-cultivo" th:each="c : ${resumen.cultivos}">
-                    <div>
-                        <strong th:text="${c.nombre}"></strong><br>
-                        <small th:if="${c.humedad} != null or ${c.temperatura} != null"
-                               th:text="'Humedad ' + (${c.humedad} ?: '-') + '% · ' + (${c.temperatura} ?: '-') + '°C'"></small>
-                        <small th:if="${c.humedad} == null and ${c.temperatura} == null">Sensor desconectado</small>
-                    </div>
-                    <span class="badge badge-alerta" th:if="${c.estado} == 'ALERTA'">Alerta</span>
-                    <span class="badge badge-ok" th:if="${c.estado} == 'NORMAL'">Normal</span>
-                    <span class="badge badge-mutes" th:if="${c.estado} == 'SIN_DATOS'">Sin datos</span>
-                </div>
-            </article>
-        </section>
     </main>
 </div>
 </body>

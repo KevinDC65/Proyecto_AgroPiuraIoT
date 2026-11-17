@@ -2,68 +2,94 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{components/layout :: head('Alertas')}"></head>
 <body class="app">
+<a class="saltar" href="#contenido">Saltar al contenido</a>
 <div class="shell">
     <aside th:replace="~{components/layout :: sidebar('alertas')}"></aside>
-    <main class="principal">
-        <span class="migas">Inicio &gt; Alertas</span>
-        <h1>Alertas</h1>
+    <main class="principal" id="contenido">
+        <header class="encabezado">
+            <div class="encabezado-texto">
+                <nav class="migas" aria-label="Ruta">
+                    <ol><li><a th:href="@{/dashboard}">Inicio</a></li><li aria-current="page">Alertas</li></ol>
+                </nav>
+                <h1>Alertas</h1>
+            </div>
+        </header>
 
-        <p class="alerta exito" th:if="${mensaje}" th:text="${mensaje}"></p>
+        <p class="aviso ok" role="status" th:if="${mensaje}">
+            <svg th:replace="~{components/icons :: icono('check-circulo')}"></svg><span th:text="${mensaje}"></span></p>
 
-        <div class="card">
-            <h2>Mis notificaciones sin leer</h2>
-            <p th:if="${#lists.isEmpty(notificaciones)}">No tienes notificaciones pendientes.</p>
-            <div th:unless="${#lists.isEmpty(notificaciones)}">
-                <div class="alerta error" th:each="n : ${notificaciones}"
-                     style="margin-bottom:0.5rem; display:flex; align-items:center; gap:0.8rem;">
-                    <span th:text="${n.alerta.umbral.cultivo.nombre} + ': ' + ${n.alerta.mensaje}"></span>
-                    <form th:action="@{/alertas/{id}/leida(id=${n.idNotificacion})}" method="post" class="inline">
-                        <button class="btn claro chico" type="submit">Marcar como leída</button>
+        <section class="panel" aria-labelledby="t-notif">
+            <div class="panel-cabeza">
+                <div>
+                    <h2 id="t-notif">Notificaciones sin leer</h2>
+                    <p>Avisos enviados a tu cuenta cuando una lectura salió de su umbral</p>
+                </div>
+                <span class="estado alerta" th:unless="${#lists.isEmpty(notificaciones)}"
+                      th:text="${#lists.size(notificaciones)} + ' sin leer'">2 sin leer</span>
+            </div>
+            <div class="vacio" th:if="${#lists.isEmpty(notificaciones)}">
+                <span class="vacio-icono"><svg th:replace="~{components/icons :: icono('check')}"></svg></span>
+                <strong>Estás al día</strong>
+                <p>No tienes notificaciones pendientes. Te avisaremos aquí cuando un cultivo salga de rango.</p>
+            </div>
+            <ul class="notificaciones" th:unless="${#lists.isEmpty(notificaciones)}">
+                <li class="notificacion" th:each="n : ${notificaciones}">
+                    <span class="notificacion-icono"><svg th:replace="~{components/icons :: icono('alerta')}"></svg></span>
+                    <div>
+                        <strong th:text="${n.alerta.umbral.cultivo.nombre}">Mango · Parcela A</strong>
+                        <p th:text="${n.alerta.mensaje}">Humedad de suelo 28 % por debajo del mínimo 35 %</p>
+                    </div>
+                    <form th:action="@{/alertas/{id}/leida(id=${n.idNotificacion})}" method="post">
+                        <button class="btn secundario chico" type="submit">
+                            <svg th:replace="~{components/icons :: icono('check')}"></svg> Marcar como leída</button>
                     </form>
+                </li>
+            </ul>
+        </section>
+
+        <section class="panel" aria-labelledby="t-hist">
+            <div class="panel-cabeza">
+                <div>
+                    <h2 id="t-hist">Historial de alertas</h2>
+                    <p>Una alerta queda pendiente hasta que alguien la marca como atendida</p>
                 </div>
             </div>
-        </div>
-
-        <div class="card">
-            <h2>Historial de alertas</h2>
-            <p th:if="${#lists.isEmpty(alertas)}">Aún no se han generado alertas en el sistema.</p>
-            <table class="tabla" th:unless="${#lists.isEmpty(alertas)}">
-                <thead>
-                <tr>
-                    <th>Fecha</th>
-                    <th>Cultivo</th>
-                    <th>Variable</th>
-                    <th>Mensaje</th>
-                    <th>Estado</th>
-                    <th>Acción</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr th:each="a : ${alertas}">
-                    <td th:text="${a.fechaAlerta}"></td>
-                    <td>
-                        <a style="color: var(--teal-800); font-weight: 600;"
-                           th:href="@{/cultivos/{id}/umbrales(id=${a.umbral.cultivo.idCultivo})}"
-                           th:text="${a.umbral.cultivo.nombre}"></a>
-                    </td>
-                    <td th:text="${a.umbral.tipoSensor.obtenerNombre()}"></td>
-                    <td th:text="${a.mensaje}"></td>
-                    <td>
-                        <span class="badge badge-alerta" th:if="${!a.atendida}">Pendiente</span>
-                        <span class="badge badge-ok" th:if="${a.atendida}">Atendida</span>
-                    </td>
-                    <td>
-                        <form th:if="${!a.atendida}"
-                              th:action="@{/alertas/{id}/atender(id=${a.idAlerta})}"
-                              method="post" class="inline">
-                            <button class="btn claro chico" type="submit">Marcar como atendida</button>
-                        </form>
-                        <span th:if="${a.atendida}" class="suave">—</span>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
+            <div class="vacio" th:if="${#lists.isEmpty(alertas)}">
+                <span class="vacio-icono"><svg th:replace="~{components/icons :: icono('campana')}"></svg></span>
+                <strong>Aún no se han generado alertas</strong>
+                <p>Las alertas aparecen cuando una lectura supera los umbrales configurados de un cultivo.</p>
+                <a class="btn secundario" th:href="@{/umbrales}">Configurar umbrales</a>
+            </div>
+            <div class="tabla-marco" th:unless="${#lists.isEmpty(alertas)}">
+                <table class="tabla apilable">
+                    <thead>
+                    <tr><th>Fecha</th><th>Cultivo</th><th>Variable</th><th>Mensaje</th><th>Estado</th><th><span class="solo-lector">Acción</span></th></tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="a : ${alertas}" th:classappend="${!a.atendida} ? 'pendiente'">
+                        <td data-etiqueta="Fecha" class="num" th:text="${a.fechaAlerta != null} ? ${#temporals.format(a.fechaAlerta, 'dd/MM/yyyy HH:mm')} : '—'">17/11/2026 08:40</td>
+                        <td data-etiqueta="Cultivo">
+                            <a class="celda-principal" th:href="@{/cultivos/{id}/umbrales(id=${a.umbral.cultivo.idCultivo})}"
+                               th:text="${a.umbral.cultivo.nombre}">Mango</a></td>
+                        <td data-etiqueta="Variable" th:text="${#strings.capitalize(#strings.replace(a.umbral.tipoSensor.obtenerNombre(), '_', ' '))}">Humedad de suelo</td>
+                        <td data-etiqueta="Mensaje" class="mensaje-celda" th:text="${a.mensaje}">Lectura fuera de rango</td>
+                        <td data-etiqueta="Estado">
+                            <span class="estado alerta" th:if="${!a.atendida}">Pendiente</span>
+                            <span class="estado ok" th:if="${a.atendida}">Atendida</span>
+                        </td>
+                        <td class="td-acciones">
+                            <div class="celda-acciones">
+                                <form th:if="${!a.atendida}" th:action="@{/alertas/{id}/atender(id=${a.idAlerta})}" method="post">
+                                    <button class="btn secundario chico" type="submit">
+                                        <svg th:replace="~{components/icons :: icono('check')}"></svg> Marcar atendida</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
     </main>
 </div>
 </body>

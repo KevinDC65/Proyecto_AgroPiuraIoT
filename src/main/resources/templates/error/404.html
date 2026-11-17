@@ -1,15 +1,17 @@
 <!doctype html>
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
-  <head th:replace="~{components/layout :: head('Portada')}"></head>
-  <body class="publico">
-    <div th:replace="~{components/layout :: topPublico}"></div>
-    <main class="portada">
-      <h1>404 Not Found</h1>
-      <p>La pagina que estas buscando no existe.</p>
-      <!-- Spring Boot injects these variables automatically -->
-      <p th:text="${'Path: ' + path}"></p>
-      <p th:text="${'Timestamp: ' + timestamp}"></p>
-      <a href="/">Volver</a>
-    </main>
-  </body>
+<head th:replace="~{components/layout :: head('Página no encontrada')}"></head>
+<body class="publico">
+<header th:replace="~{components/layout :: topPublico}"></header>
+<main class="error-pagina">
+    <span class="error-codigo">404</span>
+    <h1>No encontramos esta página</h1>
+    <p>Puede que el enlace esté incompleto o que el cultivo ya no exista.</p>
+    <p class="error-ruta" th:if="${path}" th:text="${path}">/ruta</p>
+    <div class="form-acciones">
+        <a class="btn primario" th:href="@{/dashboard}">Ir al resumen</a>
+        <a class="btn secundario" th:href="@{/}">Volver al inicio</a>
+    </div>
+</main>
+</body>
 </html>
