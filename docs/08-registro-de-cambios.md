@@ -6,6 +6,40 @@ el estado actual sin leer todo el código.
 
 ---
 
+## 17/11/2026 · Integración de los cambios del 12/11/2026
+
+Se integraron los commits `71e0ef2` (ajustes de interfaz) y `e555019` (API de telemetría y
+pruebas) sobre la revisión integral descrita más abajo. Donde ambos cambiaban lo mismo se
+conservó la versión revisada; lo compatible se incorporó.
+
+**Incorporado:**
+- API de telemetría: `TelemetriaController` (`/api/telemetria`), `TelemetriaService`, DTOs
+  `TelemetriaRequest`, `LecturaItemRequest`, `TelemetriaResponse` y consultas nuevas en
+  `SensorRepository`. Queda **cerrada** (`denyAll` en `SecurityConfig`) hasta autenticar cada
+  nodo con su token: abierta, cualquiera podía escribir lecturas en cultivos ajenos. Es el
+  punto de partida de los issues A1 y A2.
+- Usuarios demo `colaborador@agropiura.com` y `usuario@agropiura.com`, creados solo en modo
+  demo (ver [10-usuarios-de-prueba.md](10-usuarios-de-prueba.md)).
+- Validaciones de entrada en `UsuarioService` y `AppUserDetailsService`; `Rol.esColaborador`.
+- Pruebas nuevas: `ViewControllerTest`, `CultivoControllerTest`, `SecurityControllerTest`,
+  `UmbralControllerTest`, `AppUserDetailsServiceTest`, `TelemetriaControllerTest` y casos
+  nuevos en `UsuarioServiceTest` y `DataSeederTest`. Se adaptaron al modelo de permisos por
+  cultivo (los cultivos de prueba se crean con administrador). Total: 120 pruebas, 108
+  activas y 12 de telemetría desactivadas hasta el issue A2.
+- Mensaje "Cultivo registrado" al crear un cultivo (las demás acciones ya lo tenían).
+
+**No incorporado (se mantuvo la versión revisada):**
+- `ddl-auto=update`: el esquema lo sigue gobernando `database/esquema.sql` (`validate`).
+- Pruebas sobre H2 en memoria: siguen contra PostgreSQL con el esquema real, porque los
+  borrados en cascada y las restricciones viven en la BD.
+- CSRF desactivado en `/api/**` y rutas `/api/**` públicas.
+- Borrado manual de datos hijos al eliminar un cultivo (lo hace la BD con `ON DELETE CASCADE`).
+- Validaciones de cultivo con `IllegalArgumentException` en el servicio (terminaban en error
+  500; las cubre la validación del formulario).
+- "Desasignar nodo" y el contador de nodos activos del dashboard: dependían de partes de su
+  versión no integradas. Pueden retomarse dentro del issue A2.
+- Ajustes de estilos sobre el diseño anterior: los reemplaza el rediseño.
+
 ## 17/11/2026 · Revisión integral, seguridad, rediseño de interfaz y documentación
 
 ### Seguridad y permisos (backend)

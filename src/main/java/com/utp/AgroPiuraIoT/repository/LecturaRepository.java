@@ -10,6 +10,8 @@ import org.springframework.data.repository.query.Param;
 
 public interface LecturaRepository extends JpaRepository<Lectura, Integer> {
 
+    List<Lectura> findBySensorIdSensorOrderByFechaHoraDesc(Integer idSensor);
+
     /** Última lectura del sensor (LIMIT 1): no carga todo el histórico. */
     Optional<Lectura> findFirstBySensorIdSensorOrderByFechaHoraDesc(Integer idSensor);
 

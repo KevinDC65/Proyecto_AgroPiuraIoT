@@ -7,7 +7,8 @@
 .\mvnw.cmd test -Dtest=CultivoServiceTest    # una clase
 ```
 
-**56 pruebas** en `src/test/java/com/utp/AgroPiuraIoT/`. Usan la BD local configurada;
+**120 pruebas** en `src/test/java/com/utp/AgroPiuraIoT/` (108 activas y 12 de telemetría
+desactivadas hasta el issue A2). Usan la BD local configurada;
 cada prueba está anotada con `@Transactional` y se revierte al terminar, así que no deja
 datos. Requieren PostgreSQL encendido con el esquema creado.
 
@@ -20,10 +21,16 @@ datos. Requieren PostgreSQL encendido con el esquema creado.
 | `HistoricoServiceTest` | 6 | Rango de fechas, sin fechas, un solo extremo, rango invertido, Excel, resumen |
 | `UmbralServiceTest` | 5 | Guardar, actualizar sin duplicar, rango inválido, cultivo inexistente, eliminar |
 | `ClimaServiceTest` | 4 | Clima por ubicación, caché, sin ubicación, proveedor sin datos (usa un cliente falso, sin red) |
-| `UsuarioServiceTest` | 3 | Clave cifrada, correo duplicado, claves distintas |
+| `UsuarioServiceTest` | 8 | Clave cifrada, correo duplicado, claves distintas |
 | `CultivoExcelExporterTest` | 2 | Cabecera y filas, lista vacía |
-| `DataSeederTest` | 1 | El administrador demo existe y autentica |
+| `DataSeederTest` | 2 | Los usuarios demo existen y autentican con su rol |
 | `AgroPiuraIoTApplicationTests` | 1 | El contexto de Spring arranca |
+| `ViewControllerTest` | 14 | Cada pantalla renderiza su plantilla con el modelo esperado |
+| `CultivoControllerTest` | 12 | Formularios de cultivo, mensajes, nodos y exportación |
+| `SecurityControllerTest` | 8 | Rutas públicas y protegidas, login, logout, registro y API de telemetría cerrada |
+| `UmbralControllerTest` | 6 | Lista, guardado, errores y eliminación de umbrales |
+| `AppUserDetailsServiceTest` | 6 | Carga de usuarios para el login y sus roles |
+| `TelemetriaControllerTest` | 12 | API de telemetría. **Desactivada** (`@Disabled`) hasta autenticar nodos con token (issue A2) |
 
 ### Escribir pruebas nuevas
 
@@ -72,7 +79,7 @@ Con la aplicación corriendo y la BD local:
 
 ## Última verificación completa (17/11/2026)
 
-- `mvnw clean test`: 56/56 en verde con JDK 25.
+- `mvnw clean test`: 108 en verde y 12 desactivadas a propósito (telemetría), con JDK 25.
 - Instalación limpia en una BD temporal con `esquema.sql`: arranca, valida el esquema y
   siembra catálogos y administrador demo.
 - Recorrido completo en navegador con un usuario de prueba (registro, cultivo, nodo,

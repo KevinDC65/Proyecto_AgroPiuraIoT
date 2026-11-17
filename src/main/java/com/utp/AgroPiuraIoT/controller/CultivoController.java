@@ -64,12 +64,13 @@ public class CultivoController {
 
     @PostMapping
     public String crear(@Valid @ModelAttribute("form") CultivoForm form, BindingResult errores,
-                        Authentication auth, Model model) {
+                        Authentication auth, Model model, RedirectAttributes flash) {
         if (errores.hasErrors()) {
             model.addAttribute("cultivoId", null);
             return "cultivos/form";
         }
         Cultivo creado = cultivos.crear(form, auth.getName());
+        flash.addFlashAttribute("mensaje", "Cultivo registrado");
         return "redirect:/cultivos/" + creado.getIdCultivo();
     }
 

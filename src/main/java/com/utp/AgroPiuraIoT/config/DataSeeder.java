@@ -40,6 +40,14 @@ public class DataSeeder {
         this.adminDemoClave = adminDemoClave;
     }
 
+    /** Colaborador de demostración de "Parcela Demo - Piura" (RF-07); solo en modo demo. */
+    public static final String COLAB_DEMO_CORREO = "colaborador@agropiura.com";
+    public static final String COLAB_DEMO_CLAVE = "AgroColab2026";
+
+    /** Usuario de demostración sin cultivos (prueba de aislamiento); solo en modo demo. */
+    public static final String USER_DEMO_CORREO = "usuario@agropiura.com";
+    public static final String USER_DEMO_CLAVE = "AgroUser2026";
+
     @Bean
     ApplicationRunner sembrarCatalogos(RolRepository roles, TipoSensorRepository tipos,
                                        UsuarioRepository usuarios, CultivoRepository cultivos,
@@ -49,7 +57,11 @@ public class DataSeeder {
             sembrarRoles(roles);
             sembrarTiposSensor(tipos);
             if (adminDemoHabilitado) {
+                // Cuentas de demostración (docs/10-usuarios-de-prueba.md). Solo en modo demo:
+                // con agro.demo.admin.habilitado=false no se crea ninguna.
                 sembrarAdminDemo(roles, usuarios, cultivos, accesos, claves);
+                sembrarColabDemo(roles, usuarios, cultivos, accesos, claves);
+                sembrarUsuarioDemo(usuarios, claves);
             }
             avisarCultivosSinAdministrador(cultivos);
         };
@@ -137,5 +149,45 @@ public class DataSeeder {
                     + "variable ADMIN_DEMO_CLAVE o desactívalo con agro.demo.admin.habilitado=false "
                     + "fuera del entorno local.");
         }
+    }
+
+    private void sembrarColabDemo(RolRepository roles, UsuarioRepository usuarios,
+                                  CultivoRepository cultivos, UsuarioCultivoRepository accesos,
+                                  PasswordEncoder claves) {
+        if (usuarios.existsByCorreo(COLAB_DEMO_CORREO)) {
+            return;
+        }
+        Usuario colab = new Usuario();
+        colab.setNombre("Colaborador Demo");
+        colab.setCorreo(COLAB_DEMO_CORREO);
+        colab.setContrasena(claves.encode(COLAB_DEMO_CLAVE));
+        usuarios.save(colab);
+
+        cultivos.findByNombre("Parcela Demo - Piura").ifPresent(demo -> {
+            roles.findByNombreRolIgnoreCase("colaborador").ifPresent(rolColab -> {
+                UsuarioCultivo acceso = new UsuarioCultivo();
+                acceso.setUsuario(colab);
+                acceso.setCultivo(demo);
+                acceso.setRol(rolColab);
+                accesos.save(acceso);
+            });
+        });
+
+        log.info("Usuario colaborador de demostración sembrado: {} "
+                + "(ver docs/10-usuarios-de-prueba.md)", COLAB_DEMO_CORREO);
+    }
+
+    private void sembrarUsuarioDemo(UsuarioRepository usuarios, PasswordEncoder claves) {
+        if (usuarios.existsByCorreo(USER_DEMO_CORREO)) {
+            return;
+        }
+        Usuario user = new Usuario();
+        user.setNombre("Usuario Estándar Demo");
+        user.setCorreo(USER_DEMO_CORREO);
+        user.setContrasena(claves.encode(USER_DEMO_CLAVE));
+        usuarios.save(user);
+
+        log.info("Usuario estándar de demostración sembrado: {} "
+                + "(ver docs/10-usuarios-de-prueba.md)", USER_DEMO_CORREO);
     }
 }

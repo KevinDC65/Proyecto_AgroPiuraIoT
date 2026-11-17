@@ -35,4 +35,15 @@ class DataSeederTest {
         assertTrue(admin.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN")));
     }
+
+    @Test
+    void usuarioColaboradorDemoExisteYAutentica() {
+        org.springframework.security.core.userdetails.UserDetails colab =
+                detalles.loadUserByUsername("colaborador@agropiura.com");
+
+        assertEquals("colaborador@agropiura.com", colab.getUsername());
+        assertTrue(claves.matches("AgroColab2026", colab.getPassword()));
+        assertTrue(colab.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_COLABORADOR")));
+    }
 }

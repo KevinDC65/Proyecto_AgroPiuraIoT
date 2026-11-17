@@ -47,6 +47,7 @@ acceso al cultivo; "Admin" es el administrador **de ese cultivo**.
 | GET | `/login` | Público | Formulario de login (POST lo procesa Spring Security) |
 | GET / POST | `/registro` | Público | Crear cuenta |
 | POST | `/logout` | Sesión | Cerrar sesión; vuelve a `/?logout` |
+| POST | `/api/telemetria` | **Cerrada** | Recepción de lecturas de los nodos. Existe el código, pero responde 403 a todos hasta autenticar cada nodo con su token (issues A1 y A2) |
 | GET | `/dashboard` | Sesión | Resumen de los cultivos propios |
 | GET | `/cultivos` | Sesión | Lista de cultivos propios |
 | GET | `/cultivos/nuevo` | Sesión | Formulario de alta |

@@ -7,6 +7,9 @@
 - Contraseñas guardadas con **BCrypt**; nunca en texto plano ni en logs.
 - Rutas públicas: `/`, `/login`, `/registro`, `/css/**`, `/js/**`, `/img/**`, `/error`.
   Todo lo demás exige sesión y redirige a `/login`.
+- `/api/**` está **cerrada para todos** (`denyAll`). La API de telemetría ya existe, pero
+  abrirla sin autenticar cada nodo permitiría escribir lecturas en cultivos ajenos. Se abre
+  en el issue A2, con token por nodo.
 - Login correcto → `/dashboard`. Login fallido → `/login?error`. Cerrar sesión (POST
   `/logout`) borra la cookie `JSESSIONID` y vuelve a `/?logout` con un aviso.
 - **CSRF activo** en todos los formularios POST. Con `th:action` Thymeleaf añade el token

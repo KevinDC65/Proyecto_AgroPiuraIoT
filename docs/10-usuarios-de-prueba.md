@@ -19,6 +19,8 @@ esos no quedan en la BD y no se anotan.
 | Correo | Contraseña | Rol y cultivos | Para qué sirve | Origen |
 |---|---|---|---|---|
 | `admin@agropiura.com` | `AgroAdmin2026` | Administrador de **Parcela Demo - Piura** | Demostración y pruebas de administrador | Lo crea la app al arrancar (`DataSeeder`). La clave cambia con `ADMIN_DEMO_CLAVE` |
+| `colaborador@agropiura.com` | `AgroColab2026` | Colaborador de **Parcela Demo - Piura** | Probar el rol colaborador: ve el cultivo pero no puede editarlo | Lo crea la app al arrancar en modo demo (`DataSeeder`) |
+| `usuario@agropiura.com` | `AgroUser2026` | Sin cultivos | Probar un usuario sin datos (dashboard vacío, 403 en cultivos ajenos) | Lo crea la app al arrancar en modo demo (`DataSeeder`) |
 | `k@gmail.com` | `12345678` | Administrador de **Mango - Parcela A** y **Papa** | Cuenta de desarrollo de Kevin con los datos de prueba iniciales | Registro manual (14/10/2026). Cultivos asignados con `database/migracion-datos-anteriores.sql` |
 | `colab.test@agro.com` | *desconocida* (ver abajo) | Colaborador de **Parcela Demo - Piura** | Probar el rol colaborador: ve el cultivo pero no puede editarlo | Creada el 25/10/2026 al probar RF-07 |
 | `test@agropiura.pe` | `test1234` | Sin cultivos | Probar un usuario nuevo sin datos (dashboard vacío, 403 en cultivos ajenos) | Registro manual (14/10/2026) |
@@ -28,18 +30,19 @@ esos no quedan en la BD y no se anotan.
 La contraseña de `colab.test@agro.com` no quedó registrada y no se puede recuperar (se
 guarda cifrada con BCrypt). Dos opciones:
 
+- **Usar `colaborador@agropiura.com`**, que cumple el mismo papel con contraseña conocida.
 - **Darle una contraseña nueva conocida** (solo en BD local) y anotarla en la tabla.
-- **Crear otra cuenta colaboradora:** registrarse en `/registro`, entrar como
-  `admin@agropiura.com` → Parcela Demo - Piura → Accesos → asignar el correo nuevo como
-  colaborador. Anotarla aquí.
+
+Las tres cuentas `@agropiura.com` solo se crean con `agro.demo.admin.habilitado=true` (valor
+por defecto en local). En un servidor compartido se desactiva y no existe ninguna.
 
 ## Probar los roles rápidamente
 
 | Quiero probar… | Entrar como |
 |---|---|
 | Todo lo que puede hacer un administrador | `admin@agropiura.com` o `k@gmail.com` |
-| Que un colaborador ve pero no administra | `colab.test@agro.com` (en Parcela Demo - Piura) |
-| Aislamiento entre usuarios (403 en cultivos ajenos) | `test@agropiura.pe` abriendo `/cultivos/180` |
+| Que un colaborador ve pero no administra | `colaborador@agropiura.com` (en Parcela Demo - Piura) |
+| Aislamiento entre usuarios (403 en cultivos ajenos) | `usuario@agropiura.com` o `test@agropiura.pe` abriendo `/cultivos/180` |
 | Cultivos con datos anteriores a los permisos | `k@gmail.com` |
 
 ## Si tu BD local tiene cultivos que nadie ve

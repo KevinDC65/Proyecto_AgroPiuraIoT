@@ -30,6 +30,10 @@ public class SecurityConfig {
         http.authorizeHttpRequests(auth -> auth
                         .requestMatchers("/", "/login", "/registro",
                                 "/css/**", "/js/**", "/img/**", "/favicon.ico", "/error").permitAll()
+                        // API de telemetría cerrada hasta autenticar cada nodo con su token
+                        // (issues A1 y A2 de docs/11-plan-de-sprints.md). Abierta, cualquiera
+                        // podría escribir lecturas en nodos de cultivos ajenos.
+                        .requestMatchers("/api/**").denyAll()
                         .anyRequest().authenticated())
                 .formLogin(form -> form
                         .loginPage("/login")

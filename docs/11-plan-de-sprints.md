@@ -81,6 +81,11 @@ backend, con pruebas. CI funcionando.
 <a id="a1"></a>
 ### A1 · Base de la telemetría IoT
 
+**Punto de partida:** ya existe una primera versión de la API (`TelemetriaController` en
+`/api/telemetria`, `TelemetriaService`, DTOs `TelemetriaRequest` / `LecturaItemRequest` y
+`TelemetriaControllerTest`). Está **cerrada** en `SecurityConfig` porque no autentica al
+nodo. El contrato de este issue debe partir de ese formato en lugar de inventar otro.
+
 **Objetivo:** preparar todo lo necesario para que un nodo ESP32 real pueda enviar lecturas
 de forma segura y con datos válidos.
 
@@ -285,7 +290,9 @@ datos creíbles, no un cultivo vacío.
 **Objetivo:** recibir lecturas reales y mostrar si cada nodo está funcionando.
 
 **Pasos:**
-1. **Endpoint `POST /api/lecturas`** según el contrato de A1. Autenticación por token del
+1. **Abrir y asegurar la API existente** (`/api/telemetria`, ver punto de partida de A1)
+   según el contrato de A1: quitar el `denyAll` de `/api/**` en `SecurityConfig`,
+   reactivar y adaptar `TelemetriaControllerTest` (hoy `@Disabled`). Autenticación por token del
    nodo (cabecera, por ejemplo `Authorization: Bearer <token>`), fuera de la sesión web.
    Solo para `/api/**`: sin CSRF y sin redirección al login (responde 401 en JSON). Cada
    lectura válida se guarda y pasa por `AlertasService.evaluar(...)`.
