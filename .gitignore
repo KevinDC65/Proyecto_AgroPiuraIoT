@@ -32,8 +32,28 @@ build/
 ### VS Code ###
 .vscode/
 
-### Playwright MCP ###
+### Configuración local de editores y herramientas (no se versiona) ###
+.claude/
+.cursor/
+.cursorrules
+.windsurf/
+.windsurfrules
+.continue/
+.aider*
+.codeium/
+.copilot/
+.github/copilot-instructions.md
+.github/modernize/
+.impeccable/
 .playwright-mcp/
+CLAUDE.md
+CLAUDE.local.md
+AGENTS.md
+GEMINI.md
+
+### Sistema operativo ###
+.DS_Store
+Thumbs.db
 
 ### Logs de la app ###
 logs/
@@ -41,4 +61,7 @@ logs/
 ### Evidencias de demostración (capturas de la validación) ###
 evidencia/
 
+### Configuración con credenciales locales ###
+# Solo se versiona application.properties.example. El wrapper de Maven
+# (.mvn/wrapper/maven-wrapper.properties) ya está versionado y no se ve afectado.
 *.properties
