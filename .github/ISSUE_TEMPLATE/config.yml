@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Plan de sprints (issues A1 a E3)
+    url: https://github.com/KevinDC65/Proyecto_AgroPiuraIoT/blob/main/docs/11-plan-de-sprints.md
+    about: Antes de abrir un issue nuevo, revisa si ya está en el plan.
+  - name: Reglas del proyecto
+    url: https://github.com/KevinDC65/Proyecto_AgroPiuraIoT/blob/main/docs/09-reglas-del-proyecto.md
+    about: Ramas, commits, pull requests y zonas protegidas.

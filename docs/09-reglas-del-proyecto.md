@@ -91,6 +91,14 @@ existen** en este proyecto. Para evitarlo:
   añadidas por herramientas, ni textos tipo "Generado con…"). El autor del commit es la
   persona que lo revisa y lo sube.
 - No usar `git push --force` en `main`.
+- **Configuración del repositorio en GitHub:**
+  - `main` está protegida: los cambios entran solo por pull request con **1 aprobación** de
+    otro integrante; no se permite `push --force` ni borrarla.
+  - Al abrir un pull request aparece una plantilla con la lista de verificación; al abrir un
+    issue, plantillas de "error" y "nueva tarea".
+  - Al integrar un pull request la rama se borra sola.
+  - Las tareas del cierre del proyecto ya están creadas como issues #1 a #15
+    ([11-plan-de-sprints.md](11-plan-de-sprints.md)).
 
 ## 6. Archivos que no se suben
 

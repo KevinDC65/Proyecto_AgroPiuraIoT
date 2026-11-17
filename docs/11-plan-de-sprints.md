@@ -5,7 +5,8 @@ simuladas) a un producto **completo y defendible**: lecturas reales desde los no
 de negocio agronómicas, cuentas seguras, reportes útiles para el agricultor y una entrega
 desplegable y documentada.
 
-El trabajo está dividido en **15 issues** en GitHub. Cada integrante toma **como máximo 3**.
+El trabajo está dividido en **15 issues** en GitHub ([#1 a #15](https://github.com/KevinDC65/Proyecto_AgroPiuraIoT/issues),
+con etiquetas por frente y sprint y un milestone por sprint). Cada integrante toma **como máximo 3**.
 
 ---
 
@@ -546,21 +547,21 @@ preparar la presentación.
 
 | Issue | Responsable | Estado |
 |---|---|---|
-| A1 · Base de la telemetría IoT | | ☐ |
-| B1 · Alertas por episodio y severidad | | ☐ |
-| C1 · Reglas de cuenta y auditoría | | ☐ |
-| D1 · Histórico escalable y datos válidos | | ☐ |
-| E1 · Integración continua, producción y datos demo | | ☐ |
-| A2 · API de lecturas y estado de nodos | | ☐ |
-| B2 · Plantillas, recomendaciones y atención | | ☐ |
-| C2 · Perfil, auditoría en uso y CSP | | ☐ |
-| D2 · Indicadores de gestión y reportes | | ☐ |
-| E2 · Docker y revisiones cruzadas | | ☐ |
-| A3 · Robustez y documentación IoT | | ☐ |
-| B3 · Validación agronómica | | ☐ |
-| C3 · Cierre de seguridad | | ☐ |
-| D3 · Verificación de indicadores y rendimiento | | ☐ |
-| E3 · Aceptación, instalación limpia y presentación | | ☐ |
+| [#1](https://github.com/KevinDC65/Proyecto_AgroPiuraIoT/issues/1) A1 · Base de la telemetría IoT | | ☐ |
+| [#2](https://github.com/KevinDC65/Proyecto_AgroPiuraIoT/issues/2) B1 · Alertas por episodio y severidad | | ☐ |
+| [#3](https://github.com/KevinDC65/Proyecto_AgroPiuraIoT/issues/3) C1 · Reglas de cuenta y auditoría | | ☐ |
+| [#4](https://github.com/KevinDC65/Proyecto_AgroPiuraIoT/issues/4) D1 · Histórico escalable y datos válidos | | ☐ |
+| [#5](https://github.com/KevinDC65/Proyecto_AgroPiuraIoT/issues/5) E1 · Integración continua, producción y datos demo | | ☐ |
+| [#6](https://github.com/KevinDC65/Proyecto_AgroPiuraIoT/issues/6) A2 · API de lecturas y estado de nodos | | ☐ |
+| [#7](https://github.com/KevinDC65/Proyecto_AgroPiuraIoT/issues/7) B2 · Plantillas, recomendaciones y atención | | ☐ |
+| [#8](https://github.com/KevinDC65/Proyecto_AgroPiuraIoT/issues/8) C2 · Perfil, auditoría en uso y CSP | | ☐ |
+| [#9](https://github.com/KevinDC65/Proyecto_AgroPiuraIoT/issues/9) D2 · Indicadores de gestión y reportes | | ☐ |
+| [#10](https://github.com/KevinDC65/Proyecto_AgroPiuraIoT/issues/10) E2 · Docker y revisiones cruzadas | | ☐ |
+| [#11](https://github.com/KevinDC65/Proyecto_AgroPiuraIoT/issues/11) A3 · Robustez y documentación IoT | | ☐ |
+| [#12](https://github.com/KevinDC65/Proyecto_AgroPiuraIoT/issues/12) B3 · Validación agronómica | | ☐ |
+| [#13](https://github.com/KevinDC65/Proyecto_AgroPiuraIoT/issues/13) C3 · Cierre de seguridad | | ☐ |
+| [#14](https://github.com/KevinDC65/Proyecto_AgroPiuraIoT/issues/14) D3 · Verificación de indicadores y rendimiento | | ☐ |
+| [#15](https://github.com/KevinDC65/Proyecto_AgroPiuraIoT/issues/15) E3 · Aceptación, instalación limpia y presentación | | ☐ |
 
 El tablero de GitHub (issues y milestones) es la fuente de verdad del estado; esta tabla
 se actualiza al cerrar cada sprint.
