@@ -44,6 +44,7 @@ La guía completa, con requisitos y solución de problemas, está en
 | [09 · Reglas del proyecto](09-reglas-del-proyecto.md) | Reglas obligatorias para colaborar y para asistentes de código |
 | [10 · Usuarios de prueba](10-usuarios-de-prueba.md) | Cuentas de prueba de la BD local, contraseñas y para qué sirve cada una |
 | [11 · Plan de sprints](11-plan-de-sprints.md) | Frentes de trabajo, tareas por sprint y criterios para cerrar el proyecto |
+| [13 · Reglas agronómicas](13-reglas-agronomicas.md) | Umbrales por cultivo con fuentes, sensor dañado, severidad, episodios, recomendaciones y validación con escenarios |
 
 ## Stack
 

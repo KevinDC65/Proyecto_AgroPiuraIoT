@@ -7,8 +7,8 @@
 .\mvnw.cmd test -Dtest=CultivoServiceTest    # una clase
 ```
 
-**120 pruebas** en `src/test/java/com/utp/AgroPiuraIoT/` (108 activas y 12 de telemetría
-desactivadas hasta el issue A2). Usan la BD local configurada;
+**129 pruebas** en `src/test/java/com/utp/AgroPiuraIoT/`: 112 activas, 12 de telemetría
+desactivadas hasta el issue A2 y 5 de validación agronómica desactivadas hasta B1, B2 y A2. Usan la BD local configurada;
 cada prueba está anotada con `@Transactional` y se revierte al terminar, así que no deja
 datos. Requieren PostgreSQL encendido con el esquema creado.
 
@@ -31,6 +31,7 @@ datos. Requieren PostgreSQL encendido con el esquema creado.
 | `UmbralControllerTest` | 6 | Lista, guardado, errores y eliminación de umbrales |
 | `AppUserDetailsServiceTest` | 6 | Carga de usuarios para el login y sus roles |
 | `TelemetriaControllerTest` | 12 | API de telemetría. **Desactivada** (`@Disabled`) hasta autenticar nodos con token (issue A2) |
+| `ValidacionAgronomicaTest` | 9 | Escenarios de B3 sobre un mango con la plantilla de B2: sequía, exceso de riego, ola de calor (4 activas). **Desactivadas** hasta B1, B2 y A2: sensor dañado, nodo caído, episodios, severidad y recomendaciones (5). Ver [13-reglas-agronomicas.md](13-reglas-agronomicas.md) |
 
 ### Escribir pruebas nuevas
 
