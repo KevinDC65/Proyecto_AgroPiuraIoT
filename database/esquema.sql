@@ -138,7 +138,9 @@ ALTER SEQUENCE public.cultivo_id_cultivo_seq OWNED BY public.cultivo.id_cultivo;
 CREATE TABLE public.dispositivo_iot (
     id_dispositivo integer NOT NULL,
     estado character varying(50) DEFAULT 'activo'::character varying NOT NULL,
-    fecha_instalacion date DEFAULT CURRENT_DATE NOT NULL
+    fecha_instalacion date DEFAULT CURRENT_DATE NOT NULL,
+    token_hash character varying(100),
+    ultima_conexion timestamp without time zone
 );
 
 

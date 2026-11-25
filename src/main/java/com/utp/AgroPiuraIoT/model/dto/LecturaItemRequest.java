@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 public class LecturaItemRequest {
 
     @JsonProperty("idDispositivo")
-    @JsonAlias({"id_dispositivo", "dispositivo_id", "deviceId"})
+    @JsonAlias({"idNodo", "id_nodo", "id_dispositivo", "dispositivo_id", "deviceId"})
     private Integer idDispositivo;
 
     @JsonProperty("idSensor")

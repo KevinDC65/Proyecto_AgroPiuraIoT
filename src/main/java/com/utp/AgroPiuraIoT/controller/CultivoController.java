@@ -120,8 +120,11 @@ public class CultivoController {
     @PostMapping("/{id:\\d+}/dispositivos/nuevo")
     @PreAuthorize("@permisos.puedeAdministrar(#id, authentication)")
     public String registrarDispositivo(@PathVariable Integer id, RedirectAttributes flash) {
-        var nodo = cultivos.registrarDispositivo(id);
-        flash.addFlashAttribute("mensaje", "Nodo #" + nodo.getIdDispositivo() + " registrado");
+        var registro = cultivos.registrarNodo(id);
+        flash.addFlashAttribute("mensaje", "Nodo #" + registro.nodo().getIdDispositivo() + " registrado");
+        // El token solo viaja en este flash: se muestra una vez y no queda guardado en texto plano.
+        flash.addFlashAttribute("tokenNodo", registro.token());
+        flash.addFlashAttribute("tokenNodoId", registro.nodo().getIdDispositivo());
         return "redirect:/cultivos/" + id;
     }
 
