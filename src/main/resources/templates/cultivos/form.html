@@ -46,6 +46,14 @@
                         <input type="text" th:field="*{ubicacion}" maxlength="200" placeholder="Ej. Chulucanas">
                         <small>Se usa para consultar el clima local.</small>
                     </label>
+                    <label class="campo-check" th:if="${cultivoId} == null">
+                        <input type="checkbox" name="aplicarPlantilla" value="true" checked>
+                        <span>
+                            <strong>Aplicar plantilla de umbrales recomendada</strong>
+                            <small>Copia los valores de referencia para mango, limón, banano, arroz o papa.
+                                Podrás ajustarlos después en la configuración del cultivo.</small>
+                        </span>
+                    </label>
                     <div class="fila">
                         <label class="campo" th:classappend="${#fields.hasErrors('latitud')} ? ' con-error'">
                             <span>Latitud</span>
@@ -70,6 +78,8 @@
                     <p class="suave">La latitud y longitud ubican la parcela en el mapa. Puedes copiarlas desde Google Maps
                         manteniendo presionado el punto de la parcela.</p>
                     <p class="suave">Después de registrar el cultivo podrás asignarle un nodo sensor y definir sus umbrales.</p>
+                    <p class="suave">La plantilla usa fuentes agronómicas (MIDAGRI y FAO) y no reemplaza la
+                        evaluación de un técnico: cada valor queda como punto de partida editable.</p>
                 </div>
             </aside>
         </div>

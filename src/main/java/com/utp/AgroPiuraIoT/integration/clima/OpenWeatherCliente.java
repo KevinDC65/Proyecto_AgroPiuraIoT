@@ -1,8 +1,10 @@
 package com.utp.AgroPiuraIoT.integration.clima;
 
 import com.utp.AgroPiuraIoT.model.dto.ClimaActual;
+import com.utp.AgroPiuraIoT.model.dto.PronosticoLluvia;
 import com.utp.AgroPiuraIoT.port.ClienteClima;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,7 +19,7 @@ import org.springframework.web.client.RestClientException;
  * la aplicación funciona sin integración, degradando con elegancia.
  * <p>
  * El mapeo JSON usa records con nombres de propiedad idénticos a la respuesta
- * del proveedor (main.temp, main.humidity, weather[].description), sin
+ * del proveedor (main.temp, main.humidity, weather[].description, pop), sin
  * dependencia directa de Jackson.
  */
 @Component
@@ -27,13 +29,17 @@ public class OpenWeatherCliente implements ClienteClima {
 
     private final RestClient clienteWeb;
     private final String apiKey;
+    private final double probabilidadLluvia;
 
     public OpenWeatherCliente(
             @Value("${clima.openweather.api-key:}") String apiKey,
             @Value("${clima.openweather.url:https://api.openweathermap.org/data/2.5}")
-            String baseUrl) {
+            String baseUrl,
+            @Value("${clima.pronostico.probabilidad-lluvia:0.5}")
+            double probabilidadLluvia) {
         this.apiKey = apiKey;
         this.clienteWeb = RestClient.builder().baseUrl(baseUrl).build();
+        this.probabilidadLluvia = probabilidadLluvia;
     }
 
     @Override
@@ -69,7 +75,44 @@ public class OpenWeatherCliente implements ClienteClima {
         }
     }
 
-    /** Estructura mínima de la respuesta de OpenWeatherMap. */
+    @Override
+    public Optional<PronosticoLluvia> pronostico(String ubicacion) {
+        if (apiKey == null || apiKey.isBlank()) {
+            return Optional.empty();
+        }
+        try {
+            OpenWeatherPronostico respuesta = clienteWeb.get()
+                    .uri(uri -> uri.path("/forecast")
+                            .queryParam("q", ubicacion)
+                            .queryParam("appid", apiKey)
+                            .queryParam("units", "metric")
+                            .queryParam("lang", "es")
+                            .queryParam("cnt", "8") // 8 bloques de 3 h = próximas 24 h
+                            .build())
+                    .retrieve()
+                    .body(OpenWeatherPronostico.class);
+            if (respuesta == null || respuesta.list() == null || respuesta.list().isEmpty()) {
+                return Optional.empty();
+            }
+            double maxima = respuesta.list().stream()
+                    .map(ItemPronostico::pop)
+                    .filter(Objects::nonNull)
+                    .mapToDouble(Double::doubleValue)
+                    .max()
+                    .orElse(0.0);
+            boolean llueve = maxima >= probabilidadLluvia;
+            return Optional.of(new PronosticoLluvia(
+                    llueve,
+                    maxima,
+                    llueve ? "Lluvia probable en las próximas 24 h" : "Sin lluvia probable"));
+        } catch (RestClientException e) {
+            log.warn("OpenWeatherMap (pronóstico) no respondió para {}: {}",
+                    ubicacion, e.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    /** Estructura mínima de la respuesta actual de OpenWeatherMap. */
     record OpenWeatherRespuesta(Main main, List<Tiempo> weather) {
     }
 
@@ -77,5 +120,12 @@ public class OpenWeatherCliente implements ClienteClima {
     }
 
     record Tiempo(String description) {
+    }
+
+    /** Estructura mínima del pronóstico de 5 días / 3 horas. */
+    record OpenWeatherPronostico(List<ItemPronostico> list) {
+    }
+
+    record ItemPronostico(Double pop) {
     }
 }

@@ -64,14 +64,25 @@ public class CultivoController {
 
     @PostMapping
     public String crear(@Valid @ModelAttribute("form") CultivoForm form, BindingResult errores,
+                        @RequestParam(defaultValue = "false") boolean aplicarPlantilla,
                         Authentication auth, Model model, RedirectAttributes flash) {
         if (errores.hasErrors()) {
             model.addAttribute("cultivoId", null);
             return "cultivos/form";
         }
-        Cultivo creado = cultivos.crear(form, auth.getName());
-        flash.addFlashAttribute("mensaje", "Cultivo registrado");
-        return "redirect:/cultivos/" + creado.getIdCultivo();
+        CultivoService.ResultadoCreacion resultado =
+                cultivos.crear(form, auth.getName(), aplicarPlantilla);
+        if (aplicarPlantilla && resultado.umbralesAplicados() > 0) {
+            flash.addFlashAttribute("mensaje", "Cultivo registrado con "
+                    + resultado.umbralesAplicados()
+                    + " umbrales de la plantilla recomendada. Puedes ajustarlos cuando quieras.");
+        } else if (aplicarPlantilla) {
+            flash.addFlashAttribute("mensaje", "Cultivo registrado. No hay plantilla para ese "
+                    + "tipo de cultivo; configura los umbrales manualmente.");
+        } else {
+            flash.addFlashAttribute("mensaje", "Cultivo registrado");
+        }
+        return "redirect:/cultivos/" + resultado.cultivo().getIdCultivo();
     }
 
     @GetMapping("/{id:\\d+}")

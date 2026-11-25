@@ -4,6 +4,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.utp.AgroPiuraIoT.model.dto.ClimaActual;
+import com.utp.AgroPiuraIoT.model.dto.PronosticoLluvia;
 import com.utp.AgroPiuraIoT.model.entity.Cultivo;
 import com.utp.AgroPiuraIoT.port.ClienteClima;
 import java.time.Duration;
@@ -14,7 +15,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 /**
- * Clima de terceros para el dashboard (RF-06, CU-07).
+ * Clima de terceros para el dashboard (RF-06, CU-07) y pronóstico de lluvia
+ * para la recomendación de riego (B2).
  * Respeta los límites del proveedor gratuito cacheando la respuesta con
  * <strong>Guava</strong>; si el proveedor falla o la ubicación no existe,
  * devuelve vacío para no interrumpir la operación del dashboard.
@@ -26,6 +28,7 @@ public class ClimaService {
 
     private final ClienteClima cliente;
     private final LoadingCache<String, Optional<ClimaActual>> climaPorUbicacion;
+    private final LoadingCache<String, Optional<PronosticoLluvia>> pronosticoPorUbicacion;
 
     public ClimaService(ClienteClima cliente,
                         @Value("${clima.cache.minutos:30}") long minutosCache) {
@@ -34,6 +37,10 @@ public class ClimaService {
                 .maximumSize(500)
                 .expireAfterWrite(Duration.ofMinutes(minutosCache))
                 .build(CacheLoader.from(this::consultarProveedor));
+        this.pronosticoPorUbicacion = CacheBuilder.newBuilder()
+                .maximumSize(500)
+                .expireAfterWrite(Duration.ofMinutes(minutosCache))
+                .build(CacheLoader.from(this::consultarPronostico));
     }
 
     /** Clima actual para la ubicación del cultivo (vacío si el cultivo no tiene). */
@@ -51,7 +58,26 @@ public class ClimaService {
         }
     }
 
+    /** Pronóstico de lluvia para la ubicación del cultivo (vacío si no hay datos). */
+    public Optional<PronosticoLluvia> pronostico(Cultivo cultivo) {
+        if (cultivo == null || cultivo.getUbicacion() == null
+                || cultivo.getUbicacion().isBlank()) {
+            return Optional.empty();
+        }
+        try {
+            return pronosticoPorUbicacion.get(cultivo.getUbicacion().trim());
+        } catch (Exception e) {
+            log.error("No se pudo obtener el pronóstico para {}: {}",
+                    cultivo.getUbicacion(), e.getMessage());
+            return Optional.empty();
+        }
+    }
+
     private Optional<ClimaActual> consultarProveedor(String ubicacion) {
         return cliente.obtener(ubicacion);
+    }
+
+    private Optional<PronosticoLluvia> consultarPronostico(String ubicacion) {
+        return cliente.pronostico(ubicacion);
     }
 }

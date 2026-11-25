@@ -4,17 +4,21 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.utp.AgroPiuraIoT.exception.RecursoNoEncontradoException;
+import com.utp.AgroPiuraIoT.exception.ReglaNegocioException;
 import com.utp.AgroPiuraIoT.model.entity.Alerta;
 import com.utp.AgroPiuraIoT.model.entity.Lectura;
 import com.utp.AgroPiuraIoT.model.entity.NotificacionUsuario;
 import com.utp.AgroPiuraIoT.model.entity.Umbral;
+import com.utp.AgroPiuraIoT.model.entity.Usuario;
 import com.utp.AgroPiuraIoT.model.entity.UsuarioCultivo;
 import com.utp.AgroPiuraIoT.repository.AlertaRepository;
 import com.utp.AgroPiuraIoT.repository.CultivoRepository;
 import com.utp.AgroPiuraIoT.repository.NotificacionUsuarioRepository;
 import com.utp.AgroPiuraIoT.repository.UmbralRepository;
 import com.utp.AgroPiuraIoT.repository.UsuarioCultivoRepository;
+import com.utp.AgroPiuraIoT.repository.UsuarioRepository;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -40,16 +44,21 @@ public class AlertasService {
     private final AlertaRepository alertas;
     private final NotificacionUsuarioRepository notificaciones;
     private final UsuarioCultivoRepository accesos;
+    private final UsuarioRepository usuarios;
+    private final AuditoriaService auditoria;
 
     /** Cache de umbrales por id de dispositivo: consulta cara que apenas cambia. */
     private final LoadingCache<Integer, List<Umbral>> umbralesPorDispositivo;
 
     public AlertasService(AlertaRepository alertas, UmbralRepository umbrales,
                           CultivoRepository cultivos, NotificacionUsuarioRepository notificaciones,
-                          UsuarioCultivoRepository accesos) {
+                          UsuarioCultivoRepository accesos, UsuarioRepository usuarios,
+                          AuditoriaService auditoria) {
         this.alertas = alertas;
         this.notificaciones = notificaciones;
         this.accesos = accesos;
+        this.usuarios = usuarios;
+        this.auditoria = auditoria;
         this.umbralesPorDispositivo = CacheBuilder.newBuilder()
                 .maximumSize(1000)
                 .expireAfterWrite(Duration.ofMinutes(5))
@@ -115,16 +124,33 @@ public class AlertasService {
         return alertas.buscarPorUsuario(correo);
     }
 
+    /**
+     * Marca la alerta como atendida y guarda responsable, fecha y comentario.
+     * Es idempotente: una alerta ya atendida no cambia de responsable ni de
+     * fecha. La acción queda en la auditoría (por ahora, log estructurado).
+     */
     @Transactional
-    public void marcarAtendida(Integer idAlerta) {
+    public void marcarAtendida(Integer idAlerta, String correoUsuario, String comentario) {
         Alerta alerta = alertas.findById(idAlerta)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Alerta", idAlerta));
         if (alerta.isAtendida()) {
-            return; // idempotente
+            return;
         }
-        alerta.marcarAtendida();
+        Usuario usuario = usuarios.findByCorreo(correoUsuario)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario", correoUsuario));
+        String limpio = comentario == null ? null : comentario.trim();
+        if (limpio != null && limpio.isEmpty()) {
+            limpio = null;
+        }
+        if (limpio != null && limpio.length() > 500) {
+            throw new ReglaNegocioException(
+                    "El comentario de atención no puede superar 500 caracteres");
+        }
+        alerta.marcarAtendida(usuario, LocalDateTime.now(), limpio);
         alertas.save(alerta);
-        log.info("Alerta {} marcada como atendida", idAlerta);
+        auditoria.registrar(usuario, "ATENDER_ALERTA", "alerta", idAlerta, limpio);
+        log.info("Alerta {} atendida por {} (comentario: {})",
+                idAlerta, correoUsuario, limpio == null ? "sin comentario" : limpio);
     }
 
     /** Notificaciones no leídas del usuario indicado (por correo). */

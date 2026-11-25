@@ -1,23 +1,34 @@
 package com.utp.AgroPiuraIoT.config;
 
 import com.utp.AgroPiuraIoT.model.entity.Cultivo;
+import com.utp.AgroPiuraIoT.model.entity.PlantillaUmbral;
 import com.utp.AgroPiuraIoT.model.entity.Rol;
 import com.utp.AgroPiuraIoT.model.entity.TipoSensor;
 import com.utp.AgroPiuraIoT.model.entity.Usuario;
 import com.utp.AgroPiuraIoT.model.entity.UsuarioCultivo;
 import com.utp.AgroPiuraIoT.repository.CultivoRepository;
+import com.utp.AgroPiuraIoT.repository.PlantillaUmbralRepository;
 import com.utp.AgroPiuraIoT.repository.RolRepository;
 import com.utp.AgroPiuraIoT.repository.TipoSensorRepository;
 import com.utp.AgroPiuraIoT.repository.UsuarioCultivoRepository;
 import com.utp.AgroPiuraIoT.repository.UsuarioRepository;
+import com.utp.AgroPiuraIoT.util.NormalizadorCultivo;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Configuration
@@ -52,10 +63,12 @@ public class DataSeeder {
     ApplicationRunner sembrarCatalogos(RolRepository roles, TipoSensorRepository tipos,
                                        UsuarioRepository usuarios, CultivoRepository cultivos,
                                        UsuarioCultivoRepository accesos,
+                                       PlantillaUmbralRepository plantillas,
                                        PasswordEncoder claves) {
         return args -> {
             sembrarRoles(roles);
             sembrarTiposSensor(tipos);
+            sembrarPlantillas(plantillas, tipos);
             if (adminDemoHabilitado) {
                 // Cuentas de demostración (docs/10-usuarios-de-prueba.md). Solo en modo demo:
                 // con agro.demo.admin.habilitado=false no se crea ninguna.
@@ -104,6 +117,73 @@ public class DataSeeder {
                 tipos.save(tipo);
             }
             log.info("Catálogo tipo_sensor sembrado con {} tipos", catalogo.length);
+        }
+    }
+
+    /**
+     * Siembra las plantillas de umbrales desde {@code plantillas-umbral.csv}.
+     * Es idempotente y no sobrescribe filas existentes: si el equipo actualiza
+     * una fuente, se añade una fila nueva o se limpia la tabla para resembrar.
+     */
+    private void sembrarPlantillas(PlantillaUmbralRepository plantillas,
+                                   TipoSensorRepository tipos) {
+        Map<String, TipoSensor> sensoresPorNombre = tipos.findAll().stream()
+                .collect(Collectors.toMap(TipoSensor::getNombreTipo, Function.identity()));
+        Map<String, PlantillaUmbral> existentes = plantillas.findAll().stream()
+                .collect(Collectors.toMap(
+                        p -> p.getTipoCultivo() + "|" + p.getTipoSensor().getIdTipoSensor(),
+                        Function.identity()));
+
+        int creadas = 0;
+        try (BufferedReader lector = new BufferedReader(new InputStreamReader(
+                new ClassPathResource("plantillas-umbral.csv").getInputStream(),
+                StandardCharsets.UTF_8))) {
+            String linea;
+            int numero = 0;
+            while ((linea = lector.readLine()) != null) {
+                numero++;
+                if (numero == 1 || linea.isBlank()) {
+                    continue; // cabecera o línea vacía
+                }
+                String[] campos = linea.split(";", -1);
+                if (campos.length < 6) {
+                    log.warn("Plantilla de umbral ignorada (línea {}): se esperaban 6 columnas",
+                            numero);
+                    continue;
+                }
+                String tipoCultivo = NormalizadorCultivo.normalizar(campos[0]);
+                TipoSensor tipoSensor = sensoresPorNombre.get(campos[1].trim());
+                if (tipoCultivo.isBlank() || tipoSensor == null) {
+                    log.warn("Plantilla de umbral ignorada (línea {}): cultivo '{}' o sensor '{}' desconocido",
+                            numero, campos[0], campos[1]);
+                    continue;
+                }
+                String clave = tipoCultivo + "|" + tipoSensor.getIdTipoSensor();
+                if (existentes.containsKey(clave)) {
+                    continue;
+                }
+                try {
+                    PlantillaUmbral plantilla = new PlantillaUmbral();
+                    plantilla.setTipoCultivo(tipoCultivo);
+                    plantilla.setTipoSensor(tipoSensor);
+                    plantilla.setValorMinimo(new BigDecimal(campos[2].trim()));
+                    plantilla.setValorMaximo(new BigDecimal(campos[3].trim()));
+                    plantilla.setFuente(campos[4].trim());
+                    plantilla.setUrlFuente(campos[5].trim());
+                    plantilla.setNotas(campos.length > 6 ? campos[6].trim() : null);
+                    plantillas.save(plantilla);
+                    existentes.put(clave, plantilla);
+                    creadas++;
+                } catch (NumberFormatException e) {
+                    log.warn("Plantilla de umbral ignorada (línea {}): mínimo/máximo inválido",
+                            numero);
+                }
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException("No se pudo leer plantillas-umbral.csv", e);
+        }
+        if (creadas > 0) {
+            log.info("Catálogo plantilla_umbral sembrado con {} fila(s)", creadas);
         }
     }
 

@@ -38,6 +38,10 @@
                     <div>
                         <strong th:text="${n.alerta.umbral.cultivo.nombre}">Mango · Parcela A</strong>
                         <p th:text="${n.alerta.mensaje}">Humedad de suelo 28 % por debajo del mínimo 35 %</p>
+                        <p class="recomendacion" th:if="${recomendaciones.containsKey(n.alerta.idAlerta)}">
+                            <strong>Recomendación:</strong>
+                            <span th:text="${recomendaciones.get(n.alerta.idAlerta)}">Regar el cultivo.</span>
+                        </p>
                     </div>
                     <form th:action="@{/alertas/{id}/leida(id=${n.idNotificacion})}" method="post">
                         <button class="btn secundario chico" type="submit">
@@ -63,7 +67,7 @@
             <div class="tabla-marco" th:unless="${#lists.isEmpty(alertas)}">
                 <table class="tabla apilable">
                     <thead>
-                    <tr><th>Fecha</th><th>Cultivo</th><th>Variable</th><th>Mensaje</th><th>Estado</th><th><span class="solo-lector">Acción</span></th></tr>
+                    <tr><th>Fecha</th><th>Cultivo</th><th>Variable</th><th>Mensaje y recomendación</th><th>Estado y atención</th><th><span class="solo-lector">Acción</span></th></tr>
                     </thead>
                     <tbody>
                     <tr th:each="a : ${alertas}" th:classappend="${!a.atendida} ? 'pendiente'">
@@ -72,18 +76,33 @@
                             <a class="celda-principal" th:href="@{/cultivos/{id}/umbrales(id=${a.umbral.cultivo.idCultivo})}"
                                th:text="${a.umbral.cultivo.nombre}">Mango</a></td>
                         <td data-etiqueta="Variable" th:text="${#strings.capitalize(#strings.replace(a.umbral.tipoSensor.obtenerNombre(), '_', ' '))}">Humedad de suelo</td>
-                        <td data-etiqueta="Mensaje" class="mensaje-celda" th:text="${a.mensaje}">Lectura fuera de rango</td>
+                        <td data-etiqueta="Mensaje" class="mensaje-celda">
+                            <span th:text="${a.mensaje}">Lectura fuera de rango</span>
+                            <p class="recomendacion" th:if="${recomendaciones.containsKey(a.idAlerta)}">
+                                <strong>Recomendación:</strong>
+                                <span th:text="${recomendaciones.get(a.idAlerta)}">Regar el cultivo.</span>
+                            </p>
+                        </td>
                         <td data-etiqueta="Estado">
                             <span class="estado alerta" th:if="${!a.atendida}">Pendiente</span>
                             <span class="estado ok" th:if="${a.atendida}">Atendida</span>
+                            <span class="celda-sub" th:if="${a.usuarioAtencion != null}"
+                                  th:text="'Por ' + ${a.usuarioAtencion.nombre}">Por Ana Torres</span>
+                            <span class="celda-sub" th:if="${a.fechaAtencion != null}"
+                                  th:text="${#temporals.format(a.fechaAtencion, 'dd/MM/yyyy HH:mm')}">24/11/2026 09:15</span>
+                            <span class="celda-sub comentario-atencion" th:if="${a.comentario != null}"
+                                  th:text="'“' + ${a.comentario} + '”'">“Se revisó el riego”</span>
                         </td>
                         <td class="td-acciones">
-                            <div class="celda-acciones">
-                                <form th:if="${!a.atendida}" th:action="@{/alertas/{id}/atender(id=${a.idAlerta})}" method="post">
-                                    <button class="btn secundario chico" type="submit">
-                                        <svg th:replace="~{components/icons :: icono('check')}"></svg> Marcar atendida</button>
-                                </form>
-                            </div>
+                            <form class="form-atender" th:if="${!a.atendida}"
+                                  th:action="@{/alertas/{id}/atender(id=${a.idAlerta})}" method="post">
+                                <input class="control chico" type="text" name="comentario" maxlength="500"
+                                       th:id="'comentario-' + ${a.idAlerta}"
+                                       aria-label="Comentario de atención (opcional)"
+                                       placeholder="Comentario (opcional)">
+                                <button class="btn secundario chico" type="submit">
+                                    <svg th:replace="~{components/icons :: icono('check')}"></svg> Marcar atendida</button>
+                            </form>
                         </td>
                     </tr>
                     </tbody>

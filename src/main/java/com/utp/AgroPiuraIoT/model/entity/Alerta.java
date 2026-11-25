@@ -35,7 +35,17 @@ public class Alerta {
     private LocalDateTime fechaAlerta;
 
     @Column(nullable = false)
-    private boolean atendida = false;   
+    private boolean atendida = false;
+
+    @ManyToOne
+    @JoinColumn(name = "id_usuario_atencion")
+    private Usuario usuarioAtencion;
+
+    @Column(name = "fecha_atencion")
+    private LocalDateTime fechaAtencion;
+
+    @Column(length = 255)
+    private String comentario;
 
     @PrePersist
     protected void prePersist() {
@@ -96,8 +106,16 @@ public class Alerta {
         this.fechaAlerta = fechaAlerta;
     }
 
-        public void marcarAtendida() {
+    /**
+     * Marca la alerta como atendida guardando quién la atendió, cuándo y el
+     * comentario opcional. D2 usa fecha_alerta y fecha_atencion para calcular
+     * el tiempo de atención.
+     */
+    public void marcarAtendida(Usuario usuario, LocalDateTime fecha, String comentario) {
         this.atendida = true;
+        this.usuarioAtencion = usuario;
+        this.fechaAtencion = fecha;
+        this.comentario = comentario;
     }
 
     public boolean isAtendida() {
@@ -106,5 +124,29 @@ public class Alerta {
 
     public void setAtendida(boolean atendida) {
         this.atendida = atendida;
+    }
+
+    public Usuario getUsuarioAtencion() {
+        return usuarioAtencion;
+    }
+
+    public void setUsuarioAtencion(Usuario usuarioAtencion) {
+        this.usuarioAtencion = usuarioAtencion;
+    }
+
+    public LocalDateTime getFechaAtencion() {
+        return fechaAtencion;
+    }
+
+    public void setFechaAtencion(LocalDateTime fechaAtencion) {
+        this.fechaAtencion = fechaAtencion;
+    }
+
+    public String getComentario() {
+        return comentario;
+    }
+
+    public void setComentario(String comentario) {
+        this.comentario = comentario;
     }
 }

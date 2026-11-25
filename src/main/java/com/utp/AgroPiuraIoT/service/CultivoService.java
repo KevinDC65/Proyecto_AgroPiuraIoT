@@ -43,11 +43,13 @@ public class CultivoService {
     private final SensorRepository sensores;
     private final TipoSensorRepository tipos;
     private final AlertasService alertas;
+    private final PlantillaUmbralService plantillas;
 
     public CultivoService(CultivoRepository cultivos, DispositivoIoTRepository dispositivos,
                           UsuarioRepository usuarios, UsuarioCultivoRepository accesos,
                           RolRepository roles, SensorRepository sensores,
-                          TipoSensorRepository tipos, AlertasService alertas) {
+                          TipoSensorRepository tipos, AlertasService alertas,
+                          PlantillaUmbralService plantillas) {
         this.cultivos = cultivos;
         this.dispositivos = dispositivos;
         this.usuarios = usuarios;
@@ -56,6 +58,7 @@ public class CultivoService {
         this.sensores = sensores;
         this.tipos = tipos;
         this.alertas = alertas;
+        this.plantillas = plantillas;
     }
 
     /** Todos los cultivos (uso interno y pruebas; la web usa {@link #listarPara}). */
@@ -99,6 +102,17 @@ public class CultivoService {
      */
     @Transactional
     public Cultivo crear(CultivoForm form, String correoCreador) {
+        return crear(form, correoCreador, false).cultivo();
+    }
+
+    /**
+     * Crea el cultivo, deja al creador como administrador y, si se pidió,
+     * aplica la plantilla de umbrales recomendada para su tipo. El resultado
+     * informa cuántos umbrales se crearon para poder avisar en la interfaz.
+     */
+    @Transactional
+    public ResultadoCreacion crear(CultivoForm form, String correoCreador,
+                                   boolean aplicarPlantilla) {
         Usuario creador = usuarios.findByCorreo(correoCreador)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Usuario", correoCreador));
         Rol administrador = roles.findByNombreRolIgnoreCase(AccesoService.ROL_ADMINISTRADOR)
@@ -110,8 +124,15 @@ public class CultivoService {
         acceso.setCultivo(cultivo);
         acceso.setRol(administrador);
         accesos.save(acceso);
-        log.info("Cultivo {} creado por {}", cultivo.getIdCultivo(), correoCreador);
-        return cultivo;
+
+        int umbralesAplicados = aplicarPlantilla ? plantillas.aplicar(cultivo) : 0;
+        log.info("Cultivo {} creado por {} (umbrales de plantilla: {})",
+                cultivo.getIdCultivo(), correoCreador, umbralesAplicados);
+        return new ResultadoCreacion(cultivo, umbralesAplicados);
+    }
+
+    /** Resultado de crear un cultivo, con los umbrales copiados de la plantilla. */
+    public record ResultadoCreacion(Cultivo cultivo, int umbralesAplicados) {
     }
 
     @Transactional
