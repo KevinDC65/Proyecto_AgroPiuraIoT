@@ -6,6 +6,27 @@ el estado actual sin leer todo el código.
 
 ---
 
+## 25/11/2026 · B3 · Validación agronómica (#12)
+
+Primera parte del issue B3, adelantada mientras B1 (#2), B2 (#7) y A2 (#6) se integran.
+
+- **`ValidacionAgronomicaTest`**: los 5 escenarios del issue (sequía, exceso de riego, ola
+  de calor, sensor dañado y nodo caído) con datos fijos sobre un cultivo de mango con los
+  umbrales de la plantilla de B2. 4 pruebas activas validan el motor actual; 5 están
+  desactivadas con el comportamiento esperado de B1, B2 y A2 (episodios, severidad,
+  recomendaciones, sensor dañado y nodo caído).
+- **`docs/13-reglas-agronomicas.md`**: umbrales por cultivo con fuentes, rango físico de
+  los sensores, propuesta de severidad (10 % / 30 % del ancho del rango), reglas de
+  episodio, catálogo de recomendaciones y resultado de cada escenario. Enlazado desde
+  `docs/README.md`.
+- **Hallazgo:** un valor imposible (pH 20) genera hoy una alerta agronómica normal. Debe
+  resolverse en B1 con los rangos físicos de A1.
+
+**Pendiente para cerrar B3:** activar las pruebas desactivadas al integrarse B1, B2 y A2,
+ajustar la severidad con los resultados y verificar las fuentes contra los PDF originales.
+
+---
+
 ## 17/11/2026 · Integración de los cambios del 12/11/2026
 
 Se integraron los commits `71e0ef2` (ajustes de interfaz) y `e555019` (API de telemetría y
