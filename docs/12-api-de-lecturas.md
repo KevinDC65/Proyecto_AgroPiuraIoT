@@ -86,6 +86,11 @@ Todas las respuestas son JSON.
 | **400** | JSON ilegible, sin lecturas, valor nulo o lectura sin tipo de sensor | `error` |
 | **401** | Falta el token, no es válido o no pertenece a `idNodo` (A2) | `error` |
 | **404** | El nodo no existe o no tiene un sensor de ese tipo | `error` |
+| **409** | Dos envíos **simultáneos** de la misma lectura; el segundo choca con el índice único (A3). No reintentar | `error` |
+
+Las lecturas **repetidas** (mismo sensor y misma `fechaHora`, por ejemplo un reenvío tras un
+timeout) no son un error: se ignoran, se cuentan en `lecturasDuplicadas` y el `status` no
+cambia. Ver la sección 7.
 
 Las lecturas físicamente imposibles responden **200** a propósito: la solicitud era
 correcta y reenviarla no cambiaría el resultado. El nodo no debe reintentar; el problema
@@ -94,7 +99,7 @@ está en el sensor.
 **200 · todo guardado**
 ```json
 { "status": "ok", "lecturasProcesadas": 4, "alertasGeneradas": 1, "lecturasRechazadas": 0,
-  "mensaje": "Telemetría procesada exitosamente" }
+  "lecturasDuplicadas": 0, "mensaje": "Telemetría procesada exitosamente" }
 ```
 
 **200 · lote parcial**
@@ -135,7 +140,32 @@ enviaron lecturas, **aunque alguna lectura se haya rechazado** por valor imposib
 nodo sí se comunicó). Una solicitud que termina en 400 o 404 no la actualiza. A2 usa este
 dato para mostrar si el nodo está en línea.
 
-## 7. Ejemplo con curl
+## 7. Lecturas repetidas y atrasadas (A3)
+
+Un nodo con mala señal puede no recibir la respuesta y **reenviar el mismo lote**. Para que
+eso no duplique datos ni alertas:
+
+- Una lectura se identifica por **sensor + `fechaHora`**. Si ya existe, se ignora: no se
+  guarda, no se evalúa contra los umbrales y se cuenta en `lecturasDuplicadas`.
+- La BD lo garantiza con el índice único `uq_lecturas_sensor_fecha (id_sensor, fecha_hora)`
+  (migración `2026-11-26_A3_lecturas_sin_duplicados.sql`). Si dos envíos iguales llegan a
+  la vez, el segundo recibe **409**.
+- Por eso el nodo **debe enviar `fechaHora`** (la hora de la medición, no la del envío).
+  Sin `fechaHora` la hora la pone el servidor y cada envío cuenta como una medición nueva.
+- La misma fecha en **otro** sensor no es duplicado.
+
+Respuesta a un reenvío:
+```json
+{ "status": "ok", "lecturasProcesadas": 0, "alertasGeneradas": 0, "lecturasRechazadas": 0,
+  "lecturasDuplicadas": 4,
+  "mensaje": "Telemetría procesada exitosamente; 4 lectura(s) ya registrada(s), ignorada(s)" }
+```
+
+**Lecturas atrasadas** (con `fechaHora` anterior a otras ya recibidas, por ejemplo las que el
+nodo guardó mientras no tenía red): se guardan y aparecen en el histórico en su lugar.
+*Pendiente B1:* que una lectura atrasada no reabra un episodio de alerta ya cerrado.
+
+## 8. Ejemplo con curl
 
 Disponible cuando A2 abra la ruta:
 
@@ -146,7 +176,7 @@ curl -X POST http://localhost:8080/api/telemetria \
   -d '{"idNodo":3,"lecturas":[{"tipoSensor":"humedad_suelo","valor":41.5}]}'
 ```
 
-## 8. Archivos
+## 9. Archivos
 
 | Archivo | Rol |
 |---|---|
@@ -156,3 +186,4 @@ curl -X POST http://localhost:8080/api/telemetria \
 | `model/RangoFisico.java` | Rangos físicos por tipo de sensor (los usa también B1) |
 | `model/dto/TelemetriaRequest.java`, `LecturaItemRequest.java`, `TelemetriaResponse.java` | Formato JSON |
 | `database/migraciones/2026-11-25_A1_token_y_conexion_nodo.sql` | Columnas `token_hash` y `ultima_conexion` |
+| `database/migraciones/2026-11-26_A3_lecturas_sin_duplicados.sql` | Índice único `uq_lecturas_sensor_fecha` |

@@ -56,6 +56,7 @@ public class TelemetriaService {
 
         int lecturasProcesadas = 0;
         int alertasGeneradas = 0;
+        int lecturasDuplicadas = 0;
         List<String> rechazos = new ArrayList<>();
         Map<Integer, DispositivoIoT> nodosQueReportaron = new LinkedHashMap<>();
 
@@ -79,6 +80,16 @@ public class TelemetriaService {
                 continue;
             }
 
+            // Reenvío del mismo lote (timeout, reintento del nodo): la lectura ya existe y se ignora.
+            // Sin fechaHora la fecha la pone el servidor, así que nunca es duplicada.
+            if (item.getFechaHora() != null
+                    && lecturas.existsBySensorIdSensorAndFechaHora(sensor.getIdSensor(), item.getFechaHora())) {
+                log.info("Lectura duplicada ignorada: nodo {}, sensor {}, {}",
+                        nodo.getIdDispositivo(), sensor.getIdSensor(), item.getFechaHora());
+                lecturasDuplicadas++;
+                continue;
+            }
+
             Lectura lectura = sensor.registrarLectura(item.getValor());
             if (item.getFechaHora() != null) {
                 lectura.setFechaHora(item.getFechaHora());
@@ -99,12 +110,17 @@ public class TelemetriaService {
             dispositivos.save(nodo);
         }
 
-        log.info("Telemetría procesada: {} lecturas guardadas, {} rechazadas, {} alertas generadas",
-                lecturasProcesadas, rechazos.size(), alertasGeneradas);
-        if (!rechazos.isEmpty()) {
-            return TelemetriaResponse.conRechazos(lecturasProcesadas, alertasGeneradas, rechazos);
+        log.info("Telemetría procesada: {} lecturas guardadas, {} rechazadas, {} duplicadas, {} alertas generadas",
+                lecturasProcesadas, rechazos.size(), lecturasDuplicadas, alertasGeneradas);
+        TelemetriaResponse respuesta = rechazos.isEmpty()
+                ? TelemetriaResponse.ok(lecturasProcesadas, alertasGeneradas)
+                : TelemetriaResponse.conRechazos(lecturasProcesadas, alertasGeneradas, rechazos);
+        respuesta.setLecturasDuplicadas(lecturasDuplicadas);
+        if (lecturasDuplicadas > 0) {
+            respuesta.setMensaje(respuesta.getMensaje() + "; " + lecturasDuplicadas
+                    + " lectura(s) ya registrada(s), ignorada(s)");
         }
-        return TelemetriaResponse.ok(lecturasProcesadas, alertasGeneradas);
+        return respuesta;
     }
 
     private Sensor resolverSensor(LecturaItemRequest item) {

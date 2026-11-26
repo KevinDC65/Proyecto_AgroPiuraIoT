@@ -7,7 +7,7 @@
 .\mvnw.cmd test -Dtest=CultivoServiceTest    # una clase
 ```
 
-**138 pruebas** en `src/test/java/com/utp/AgroPiuraIoT/` (126 activas y 12 de telemetría
+**143 pruebas** en `src/test/java/com/utp/AgroPiuraIoT/` (131 activas y 12 de telemetría
 desactivadas hasta el issue A2). `RangoFisicoTest` es unitaria y no necesita BD. Usan la BD local configurada;
 cada prueba está anotada con `@Transactional` y se revierte al terminar, así que no deja
 datos. Requieren PostgreSQL encendido con el esquema creado.
@@ -32,6 +32,7 @@ datos. Requieren PostgreSQL encendido con el esquema creado.
 | `AppUserDetailsServiceTest` | 6 | Carga de usuarios para el login y sus roles |
 | `NodoTokenServiceTest` | 6 | A1: el registro de un nodo genera token de 43 caracteres y guarda solo el hash BCrypt; token incorrecto, de otro nodo, vacío o de nodo inexistente no valida; nodo sin token; regenerar invalida el anterior; el token nunca aparece en los logs |
 | `TelemetriaServiceTest` | 6 | A1: lectura válida se guarda y actualiza `ultima_conexion`; límites físicos válidos; lectura imposible se rechaza, no se guarda y queda en el log; lote mixto; tipo de sensor que el nodo no tiene; nodo inexistente |
+| `LecturasDuplicadasTest` | 5 | A3: reenviar el mismo lote no duplica lecturas ni alertas; repetida dentro del lote; misma fecha en otro sensor no es duplicado; sin `fechaHora` nunca es duplicado; el índice único de la BD frena el duplicado aunque se salte el servicio |
 | `RangoFisicoTest` | 6 | A1: rangos físicos por tipo de sensor, límites inclusivos, tipos desconocidos (unitaria, sin BD) |
 | `TelemetriaControllerTest` | 12 | API de telemetría. **Desactivada** (`@Disabled`) hasta autenticar nodos con token (issue A2) |
 

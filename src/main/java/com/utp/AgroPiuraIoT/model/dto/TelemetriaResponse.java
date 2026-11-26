@@ -11,6 +11,8 @@ public class TelemetriaResponse {
     private int alertasGeneradas;
     private String mensaje;
     private int lecturasRechazadas;
+    /** Lecturas ignoradas porque ya estaban registradas (mismo sensor y fecha). */
+    private int lecturasDuplicadas;
     /** Motivo de cada lectura rechazada; se omite en el JSON si no hubo rechazos. */
     private List<String> rechazos;
 
@@ -84,6 +86,14 @@ public class TelemetriaResponse {
 
     public void setLecturasRechazadas(int lecturasRechazadas) {
         this.lecturasRechazadas = lecturasRechazadas;
+    }
+
+    public int getLecturasDuplicadas() {
+        return lecturasDuplicadas;
+    }
+
+    public void setLecturasDuplicadas(int lecturasDuplicadas) {
+        this.lecturasDuplicadas = lecturasDuplicadas;
     }
 
     public List<String> getRechazos() {

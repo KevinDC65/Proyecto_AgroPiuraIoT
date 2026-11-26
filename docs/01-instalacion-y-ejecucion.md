@@ -57,6 +57,7 @@ no tengas, en orden de fecha (todas se pueden ejecutar varias veces):
 
 ```powershell
 psql -h localhost -U postgres -d agropiura -f database/migraciones/2026-11-25_A1_token_y_conexion_nodo.sql
+psql -h localhost -U postgres -d agropiura -f database/migraciones/2026-11-26_A3_lecturas_sin_duplicados.sql
 ```
 
 Detalle de tablas y scripts en [04-base-de-datos.md](04-base-de-datos.md).

@@ -6,6 +6,27 @@ el estado actual sin leer todo el código.
 
 ---
 
+## 26/11/2026 · A3 · Lecturas sin duplicados (#11, primera parte)
+
+Primera parte de A3, sobre A1. Si un nodo reenvía el mismo lote (por ejemplo tras un
+timeout), las lecturas no se duplican ni vuelven a generar alertas.
+
+- **BD:** índice único `uq_lecturas_sensor_fecha (id_sensor, fecha_hora)`, que reemplaza a
+  `idx_lecturas_sensor_fecha`. Migración `database/migraciones/2026-11-26_A3_lecturas_sin_duplicados.sql`
+  (avisa si ya hay lecturas repetidas en vez de borrarlas). **Una BD existente debe ejecutarla.**
+- **Servicio:** `TelemetriaService` ignora la lectura si ya existe una del mismo sensor y
+  `fechaHora`, la cuenta en `lecturasDuplicadas` y no evalúa alertas. Sin `fechaHora` la
+  hora la pone el servidor y nunca es duplicada.
+- **API:** nuevo campo `lecturasDuplicadas` en la respuesta y código **409** para dos envíos
+  simultáneos de la misma lectura. Contrato actualizado en `docs/12-api-de-lecturas.md` (sección 7).
+- **Pruebas:** `LecturasDuplicadasTest` (5). Total: 143 (131 activas).
+
+**Pendiente para cerrar A3:** prueba de carga (10 nodos, 1 hora) y documentación final con
+diagrama del ESP32, cuando A2 abra la API; lectura atrasada que no reabra episodios, cuando
+B1 los implemente.
+
+---
+
 ## 25/11/2026 · A1 · Base de la telemetría IoT (#1)
 
 Prepara todo lo necesario para que un nodo ESP32 real envíe lecturas de forma segura y con

@@ -694,10 +694,11 @@ CREATE INDEX idx_cultivo_dispositivo_dispositivo ON public.cultivo_dispositivo U
 
 
 --
--- Name: idx_lecturas_sensor_fecha; Type: INDEX; Schema: public; Owner: -
+-- Name: uq_lecturas_sensor_fecha; Type: INDEX; Schema: public; Owner: -
+-- Única (A3): un sensor no puede tener dos lecturas con la misma fecha y hora.
 --
 
-CREATE INDEX idx_lecturas_sensor_fecha ON public.lecturas USING btree (id_sensor, fecha_hora DESC);
+CREATE UNIQUE INDEX uq_lecturas_sensor_fecha ON public.lecturas USING btree (id_sensor, fecha_hora DESC);
 
 
 --

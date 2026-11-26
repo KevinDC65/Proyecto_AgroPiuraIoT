@@ -12,6 +12,9 @@ public interface LecturaRepository extends JpaRepository<Lectura, Integer> {
 
     List<Lectura> findBySensorIdSensorOrderByFechaHoraDesc(Integer idSensor);
 
+    /** Indica si el sensor ya tiene una lectura con esa fecha y hora (índice único, A3). */
+    boolean existsBySensorIdSensorAndFechaHora(Integer idSensor, LocalDateTime fechaHora);
+
     /** Última lectura del sensor (LIMIT 1): no carga todo el histórico. */
     Optional<Lectura> findFirstBySensorIdSensorOrderByFechaHoraDesc(Integer idSensor);
 

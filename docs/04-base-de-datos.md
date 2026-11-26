@@ -21,6 +21,16 @@ la aplicación no arranca (`Schema-validation: missing column`).
 | Script | Cambio |
 |---|---|
 | `2026-11-25_A1_token_y_conexion_nodo.sql` | `dispositivo_iot.token_hash` y `dispositivo_iot.ultima_conexion` (A1, ver [12-api-de-lecturas.md](12-api-de-lecturas.md)) |
+| `2026-11-26_A3_lecturas_sin_duplicados.sql` | Reemplaza `idx_lecturas_sensor_fecha` por el índice **único** `uq_lecturas_sensor_fecha (id_sensor, fecha_hora)`: un sensor no tiene dos lecturas con la misma fecha y hora (A3) |
+
+Si la migración de A3 avisa que hay lecturas repetidas, revísalas con:
+
+```sql
+SELECT id_sensor, fecha_hora, count(*) FROM lecturas
+GROUP BY id_sensor, fecha_hora HAVING count(*) > 1;
+```
+
+y decide cuál conservar antes de borrar las otras (pueden tener alertas asociadas).
 
 Al arrancar, la aplicación avisa en el log si hay cultivos sin administrador
 (`N cultivo(s) sin administrador, invisibles para todos los usuarios`).
@@ -91,7 +101,7 @@ Todas las claves foráneas usan `ON DELETE CASCADE`, salvo `usuario_cultivo.id_r
 PostgreSQL no indexa automáticamente las claves foráneas. `indices.sql` (y `esquema.sql`)
 crean 17 índices, entre ellos:
 
-- `idx_lecturas_sensor_fecha (id_sensor, fecha_hora DESC)`: última lectura por sensor
+- `uq_lecturas_sensor_fecha (id_sensor, fecha_hora DESC)`, **único**: última lectura por sensor y evita lecturas duplicadas (A3; antes `idx_lecturas_sensor_fecha`)
   (dashboard) e histórico por fechas.
 - `idx_alertas_umbral_atendida`, `idx_notificacion_usuario_no_leidas`: contadores del menú
   y lista de alertas.
