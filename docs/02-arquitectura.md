@@ -17,9 +17,10 @@ Navegador ──HTTP──▶ Controller ──▶ Service ──▶ Repository 
 | `controller/` | Recibir la petición, validar el formulario, aplicar permisos (`@PreAuthorize`), elegir la vista | Sin lógica de negocio ni consultas directas |
 | `service/` | Reglas de negocio y transacciones (`@Transactional`) | No conoce HTTP ni vistas |
 | `repository/` | Acceso a datos con Spring Data JPA | Solo consultas; nada de reglas |
-| `model/entity/` | 11 entidades JPA. `cultivo_dispositivo` se mapea como `@JoinTable` dentro de `Cultivo`; `usuario_dispositivo` no tiene entidad | Deben coincidir exactamente con `database/esquema.sql` |
-| `model/dto/` | Formularios (`CultivoForm`, `UmbralForm`, `RegistroRequest`) y datos de vista (`DashboardResumen`, `LecturaPunto`, `ResumenVariable`, `ClimaActual`) | Records inmutables; validación con Bean Validation |
-| `security/` | `AppUserDetailsService` (login) y `PermisosCultivo` (bean `@permisos`) | Toda autorización por cultivo pasa por aquí |
+| `model/entity/` | 13 entidades JPA (incluye `Auditoria` y `AlertaNodo`). `cultivo_dispositivo` se mapea como `@JoinTable` dentro de `Cultivo`; `usuario_dispositivo` no tiene entidad | Deben coincidir exactamente con `database/esquema.sql` |
+| `model/` | `RangoFisico`: límites físicos por variable compartidos entre telemetría (A1/A2) y umbrales (B1) | Sin dependencias de infraestructura |
+| `model/dto/` | Formularios (`CultivoForm`, `UmbralForm`, `RegistroRequest`), telemetría (`TelemetriaRequest`, `TelemetriaResponse`) y datos de vista (`DashboardResumen`, `LecturaPunto`, `ResumenVariable`, `ClimaActual`) | Validación con Bean Validation / dominio |
+| `security/` | `AppUserDetailsService` (login, estado y bloqueo), `EventosAutenticacionListener` (bloqueo y auditoría), `TokenNodoService` / `TokenNodoAuthenticationFilter` (API de nodos) y `PermisosCultivo` (bean `@permisos`) | Toda autorización por cultivo, cuenta y nodo pasa por aquí |
 | `exception/` | `RecursoNoEncontradoException` (404) y `ReglaNegocioException` (400) | Los servicios lanzan estas, no `RuntimeException` genéricas |
 | `port/` | Interfaz `ClienteClima` | El negocio depende de la interfaz, no de OpenWeatherMap |
 | `integration/clima/` | `OpenWeatherCliente`, implementación del puerto | Si falla o no hay API key, responde vacío |
@@ -30,11 +31,14 @@ Navegador ──HTTP──▶ Controller ──▶ Service ──▶ Repository 
 
 | Servicio | RF | Qué hace |
 |---|---|---|
-| `UsuarioService` | RF-01 | Registro con BCrypt; correo único |
+| `UsuarioService` | RF-01, C1 | Registro con BCrypt, política de contraseñas (mín. 8 caracteres, letras y números) y correo único |
+| `AuditoriaService` | C1 | Registro transversal de acciones críticas en la tabla `auditoria` para todos los frentes |
 | `CultivoService` | RF-02 | CRUD de cultivos; registrar y asignar nodos; el creador queda como administrador; al eliminar, borra los nodos que se quedan sin ningún cultivo |
-| `UmbralService` | RF-03 | Un umbral por cultivo y variable (si existe, se actualiza); valida mínimo ≤ máximo |
-| `DashboardService` | RF-04 | Resumen por cultivo con la última lectura de cada sensor (consulta `LIMIT 1`) |
-| `AlertasService` | RF-05 | Motor de alertas: compara la lectura con el umbral, crea la alerta y una notificación por miembro del cultivo |
+| `NodoService` | A2 | Estado de nodos (`En línea`/`Sin conexión`/`Inactivo`), activación/desactivación, regeneración de token (auditado en C1) y monitor periódico de alertas `nodo_sin_conexion` |
+| `TelemetriaService` | A1, A2 | Ingesta autenticada de lecturas en `POST /api/telemetria`, validación física (`RangoFisico`), lotes mixtos, actualización de `ultima_conexion` y evaluación vía `AlertasService` |
+| `UmbralService` | RF-03, B1 | Un umbral por cultivo y variable (si existe, se actualiza); valida mínimo ≤ máximo y rangos físicos (`RangoFisico`) |
+| `DashboardService` | RF-04, B1 | Resumen por cultivo con la última lectura de cada sensor (consulta `LIMIT 1`) y episodios de alerta abiertos |
+| `AlertasService` | RF-05, B1 | Motor de alertas por episodio (`abierta`/`cerrada`) y severidad (`leve`/`moderada`/`critica`); agrupa lecturas consecutivas fuera de rango sin re-notificar y cierra al volver al rango |
 | `ClimaService` | RF-06 | Clima por ubicación con caché Guava (30 min por defecto) |
 | `AccesoService` | RF-07 | Asigna, cambia o quita roles por cultivo; nunca deja un cultivo sin administrador |
 | `HistoricoService` | RF-08 | Lecturas por rango de fechas (cada extremo es opcional), puntos de la gráfica, resumen mín/máx/promedio |
@@ -46,14 +50,46 @@ Navegador ──HTTP──▶ Controller ──▶ Service ──▶ Repository 
 2. `SimuladorService` la guarda en `lecturas` y llama a `AlertasService.evaluar(lectura)`.
 3. `AlertasService` busca los umbrales del nodo en una **caché Guava** (5 minutos) para no
    consultar la BD en cada lectura.
-4. Si el valor está fuera de `[valor_minimo, valor_maximo]`, crea una fila en `alertas` y
-   una en `notificacion_usuario` por cada usuario con acceso al cultivo.
-5. `NotificacionesAdvice` expone el número de notificaciones no leídas a todas las vistas
+4. Si el valor está fuera de `[valor_minimo, valor_maximo]`:
+   - Si ya existe un episodio abierto para el mismo cultivo, variable y dirección (`bajo`/`alto`),
+     se actualiza `valor_extremo`, `cantidad_lecturas` y `severidad` (por porcentaje de desviación
+     y duración en `agro.alertas.severidad.*`) **sin volver a notificar**.
+   - Si no existe, abre un nuevo episodio en `alertas` y crea una fila en `notificacion_usuario`
+     por cada usuario con acceso al cultivo.
+   - Cuando la variable regresa dentro del rango, el episodio abierto se cierra (`estado = 'cerrada'`,
+     `fecha_cierre`).
+5. `NotificacionesAdvice` expone el número de **episodios abiertos** del usuario a todas las vistas
    (contador del menú lateral).
 
 La caché de umbrales se invalida al guardar o eliminar un umbral, al asignar un nodo y al
 eliminar un cultivo. Si se agrega otro punto que cambie umbrales o asignaciones, **debe**
 invalidar la caché (`AlertasService.invalidarCacheUmbrales`).
+
+## Auditoría (`AuditoriaService`)
+
+Disponible para todos los frentes (**A2**, **B2**, **C2** y **D2**) mediante inyección por
+constructor de `AuditoriaService`:
+
+```java
+// Cuando ya se tiene la entidad Usuario (puede ser null si el correo no existe):
+auditoriaService.registrar(usuario, "NODO_TOKEN_REGENERADO", "dispositivo", idDispositivo,
+        "Token regenerado para nodo #" + idDispositivo);
+
+// Cuando solo se dispone del correo del usuario autenticado (Authentication.getName()):
+auditoriaService.registrarPorCorreo(correo, "ALERTA_ATENDIDA", "alerta", idAlerta,
+        "Atendida con revisión de riego");
+```
+
+**Convenciones de uso:**
+- `accion`: código en `MAYUSCULAS_CON_GUION_BAJO` (máx. 80 caracteres). Ejemplos:
+  - **C1 (autenticación):** `LOGIN_EXITOSO`, `LOGIN_FALLIDO`, `CUENTA_BLOQUEADA`.
+  - **A2 (telemetría):** `NODO_ACTIVADO`, `NODO_DESACTIVADO`, `NODO_TOKEN_REGENERADO`.
+  - **B2 (alertas/umbrales):** `ALERTA_ATENDIDA`, `PLANTILLA_UMBRAL_APLICADA`.
+  - **C2 (cuentas/cultivos):** `ACCESO_ASIGNADO`, `ACCESO_REVOCADO`, `CULTIVO_ELIMINADO`, `UMBRAL_ACTUALIZADO`.
+  - **D2 (reportes):** `REPORTE_EXPORTADO`.
+- `entidad`: nombre de la entidad afectada en minúscula singular (`usuario`, `cultivo`, `dispositivo`, `umbral`, `alerta`).
+- `idEntidad`: identificador numérico de la entidad afectada (opcional).
+- `detalle`: texto breve y legible (máx. 500 caracteres). **Nunca** incluir contraseñas, hashes ni tokens.
 
 ## Decisiones técnicas
 

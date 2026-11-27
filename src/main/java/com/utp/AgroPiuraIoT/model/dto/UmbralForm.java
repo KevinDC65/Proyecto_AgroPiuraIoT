@@ -10,12 +10,12 @@ public record UmbralForm(
         Integer idTipoSensor,
 
         @NotNull(message = "El valor mínimo es obligatorio")
-        @DecimalMin(value = "0", message = "El valor mínimo no puede ser negativo")
+        @DecimalMin(value = "-100", message = "El valor mínimo no puede ser menor a -100")
         @DecimalMax(value = "1000", message = "El valor mínimo no puede superar 1000")
         BigDecimal valorMinimo,
 
         @NotNull(message = "El valor máximo es obligatorio")
-        @DecimalMin(value = "0", message = "El valor máximo no puede ser negativo")
+        @DecimalMin(value = "-100", message = "El valor máximo no puede ser menor a -100")
         @DecimalMax(value = "1000", message = "El valor máximo no puede superar 1000")
         BigDecimal valorMaximo) {
 }

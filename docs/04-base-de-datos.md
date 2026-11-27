@@ -1,6 +1,6 @@
 # 04 · Base de datos
 
-PostgreSQL, base `agropiura`, esquema `public`, **13 tablas**.
+PostgreSQL, base `agropiura`, esquema `public`, **15 tablas**.
 
 ## Scripts
 
@@ -9,6 +9,9 @@ PostgreSQL, base `agropiura`, esquema `public`, **13 tablas**.
 | `database/esquema.sql` | BD **nueva y vacía**. Crea tablas, secuencias, claves, relaciones con sus reglas de borrado e índices. Es la referencia oficial del esquema |
 | `database/indices.sql` | BD **ya existente** creada con el DDL anterior del informe. Añade los índices y restricciones de unicidad. Se puede ejecutar varias veces (`IF NOT EXISTS`) |
 | `database/migracion-datos-anteriores.sql` | BD **con datos creados antes de los permisos por cultivo**. Nombra administrador al usuario indicado en los cultivos que no tienen ninguno (si no, nadie los ve) y crea los sensores de los nodos que no tienen. Uso: `psql ... -v correo=tu@correo.com -f database/migracion-datos-anteriores.sql`. Se puede ejecutar varias veces; si el correo no existe no aplica nada |
+| `database/migraciones/2026-11-24_C1_reglas_cuenta_auditoria.sql` | BD **existente** (C1). Añade `intentos_fallidos` y `bloqueado_hasta` en `usuarios`, crea la tabla `auditoria` y sus índices. Idempotente (`IF NOT EXISTS`) |
+| `database/migraciones/2026-11-24_B1_alertas_episodios_severidad.sql` | BD **existente** (B1). Añade `estado`, `severidad`, `direccion`, `valor_extremo`, `cantidad_lecturas`, `fecha_cierre` e índice `idx_alertas_umbral_estado` en `alertas`, rellenando filas previas. Idempotente |
+| `database/migraciones/2026-11-24_A2_api_telemetria_y_nodos.sql` | BD **existente** (A1/A2). Añade `token_hash` y `ultima_conexion` en `dispositivo_iot`, crea la tabla `alerta_nodo` y sus índices. Idempotente (`IF NOT EXISTS`) |
 
 Al arrancar, la aplicación avisa en el log si hay cultivos sin administrador
 (`N cultivo(s) sin administrador, invisibles para todos los usuarios`).
@@ -32,18 +35,20 @@ Los catálogos y el administrador de demostración los inserta la aplicación al
 
 | Tabla | Qué guarda | Columnas clave |
 |---|---|---|
-| `usuarios` | Cuentas | `correo` (único), `contrasena` (hash BCrypt), `estado`, `fecha_registro` |
+| `usuarios` | Cuentas | `correo` (único), `contrasena` (hash BCrypt), `estado`, `fecha_registro`, `intentos_fallidos`, `bloqueado_hasta` |
+| `auditoria` | Trazabilidad de eventos críticos | `id`, `id_usuario` (`ON DELETE SET NULL`), `accion`, `entidad`, `id_entidad`, `detalle`, `fecha` |
 | `roles` | Catálogo de roles por cultivo | `nombre_rol` (único) |
 | `usuario_cultivo` | Qué usuario accede a qué cultivo y con qué rol | `id_usuario`, `id_cultivo`, `id_rol` (único por usuario y cultivo) |
 | `cultivo` | Parcelas | `nombre`, `tipo_cultivo`, `ubicacion`, `latitud`, `longitud`, `area_ha` |
-| `dispositivo_iot` | Nodos ESP32 | `estado` (`activo`), `fecha_instalacion` |
+| `dispositivo_iot` | Nodos ESP32 | `estado` (`activo`/`inactivo`), `fecha_instalacion`, `token_hash` (BCrypt), `ultima_conexion` |
 | `cultivo_dispositivo` | Asignación de nodos a cultivos (muchos a muchos) | `id_cultivo`, `id_dispositivo` (único por par) |
 | `usuario_dispositivo` | Vinculación de usuarios a nodos. Viene del modelo del informe; hoy no tiene entidad JPA ni se usa | `id_usuario`, `id_dispositivo`, `estado` |
 | `tipo_sensor` | Catálogo de variables medidas | `nombre_tipo`, `unidad_medida` |
 | `sensores` | Sensor de un tipo dentro de un nodo | `id_dispositivo`, `id_tipo_sensor` |
 | `lecturas` | Mediciones | `id_sensor`, `valor`, `fecha_hora` |
 | `umbrales` | Rango aceptable por cultivo y variable | `id_cultivo`, `id_tipo_sensor` (único por par), `valor_minimo`, `valor_maximo` |
-| `alertas` | Lecturas fuera de rango | `id_lectura`, `id_umbral`, `mensaje`, `fecha_alerta`, `atendida` |
+| `alertas` | Episodios fuera de rango | `id_lectura`, `id_umbral`, `mensaje`, `fecha_alerta`, `atendida`, `estado`, `severidad`, `direccion`, `valor_extremo`, `cantidad_lecturas`, `fecha_cierre` |
+| `alerta_nodo` | Episodios de desconexión de nodos IoT | `id_dispositivo`, `id_cultivo`, `tipo` (`nodo_sin_conexion`), `estado` (`abierta`/`cerrada`), `severidad`, `mensaje`, `fecha_alerta`, `fecha_cierre`, `atendida` |
 | `notificacion_usuario` | Aviso de una alerta para cada miembro del cultivo | `id_alerta`, `id_usuario`, `leido`, `fecha_lectura` |
 
 ## Relaciones

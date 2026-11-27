@@ -43,6 +43,14 @@ class UmbralServiceTest {
         return new UmbralForm(idTipoSensor, new BigDecimal(min), new BigDecimal(max));
     }
 
+    private Integer idTipoPorNombre(String nombreTipo) {
+        return tipos.findAll().stream()
+                .filter(t -> t.getNombreTipo().equalsIgnoreCase(nombreTipo))
+                .findFirst()
+                .orElseThrow()
+                .getIdTipoSensor();
+    }
+
     @Test
     void guardaYListaPorCultivo() {
         Integer idCultivo = crearCultivo();
@@ -96,5 +104,38 @@ class UmbralServiceTest {
         umbrales.eliminar(idCultivo, guardado.getIdUmbral());
 
         assertTrue(umbrales.listar(idCultivo).isEmpty());
+    }
+
+    @Test
+    void rechazaUmbralFueraDeRangoFisico() {
+        Integer idCultivo = crearCultivo();
+        Integer idPh = idTipoPorNombre("ph_suelo");
+        Integer idHumedad = idTipoPorNombre("humedad_suelo");
+        Integer idTemp = idTipoPorNombre("temperatura_ambiente");
+
+        // pH 20 supera el máximo físico de 14
+        assertThrows(ReglaNegocioException.class,
+                () -> umbrales.guardar(idCultivo, formulario(idPh, "5", "20")));
+        // Humedad 150 supera el máximo físico de 100 %
+        assertThrows(ReglaNegocioException.class,
+                () -> umbrales.guardar(idCultivo, formulario(idHumedad, "20", "150")));
+        // Temperatura fuera de -10 a 60 °C
+        assertThrows(ReglaNegocioException.class,
+                () -> umbrales.guardar(idCultivo, formulario(idTemp, "-20", "30")));
+        assertThrows(ReglaNegocioException.class,
+                () -> umbrales.guardar(idCultivo, formulario(idTemp, "15", "80")));
+    }
+
+    @Test
+    void aceptaUmbralesEnLimitesFisicos() {
+        Integer idCultivo = crearCultivo();
+
+        Umbral ph = umbrales.guardar(idCultivo, formulario(idTipoPorNombre("ph_suelo"), "0", "14"));
+        Umbral humedad = umbrales.guardar(idCultivo, formulario(idTipoPorNombre("humedad_suelo"), "0", "100"));
+        Umbral temp = umbrales.guardar(idCultivo, formulario(idTipoPorNombre("temperatura_ambiente"), "-10", "60"));
+
+        assertEquals(new BigDecimal("14"), ph.getValorMaximo());
+        assertEquals(new BigDecimal("100"), humedad.getValorMaximo());
+        assertEquals(new BigDecimal("-10"), temp.getValorMinimo());
     }
 }

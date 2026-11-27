@@ -16,11 +16,12 @@ public class NotificacionesAdvice {
         this.alertas = alertas;
     }
 
+    /** Expone el número de episodios de alerta abiertos para el contador del menú lateral. */
     @ModelAttribute("notificacionesPendientes")
     public long notificacionesPendientes(Principal principal, HttpServletRequest request) {
         if (principal == null || request.getRequestURI().startsWith("/api/")) {
             return 0;
         }
-        return alertas.contarNoLeidas(principal.getName());
+        return alertas.contarAbiertasPorUsuario(principal.getName());
     }
 }

@@ -135,4 +135,24 @@ class UmbralControllerTest {
                 .andExpect(redirectedUrl("/cultivos/" + cultivo.getIdCultivo() + "/umbrales"))
                 .andExpect(flash().attribute("mensaje", "Umbral eliminado"));
     }
+
+    @Test
+    void guardarUmbralFueraDeRangoFisicoMuestraErrorEnFormulario() throws Exception {
+        Cultivo cultivo = crearCultivoDemo();
+        TipoSensor tipoPh = tipos.findAll().stream()
+                .filter(t -> t.getNombreTipo().equalsIgnoreCase("ph_suelo"))
+                .findFirst()
+                .orElseThrow();
+
+        mockMvc.perform(post("/cultivos/" + cultivo.getIdCultivo() + "/umbrales")
+                        .with(user("admin@agropiura.com").roles("ADMIN"))
+                        .with(csrf())
+                        .param("idTipoSensor", tipoPh.getIdTipoSensor().toString())
+                        .param("valorMinimo", "5.0")
+                        .param("valorMaximo", "20.0"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("umbrales/lista"))
+                .andExpect(model().hasErrors())
+                .andExpect(model().attributeHasErrors("form"));
+    }
 }

@@ -1,6 +1,7 @@
 package com.utp.AgroPiuraIoT.security;
 
 import com.utp.AgroPiuraIoT.model.entity.UsuarioCultivo;
+import com.utp.AgroPiuraIoT.repository.AlertaNodoRepository;
 import com.utp.AgroPiuraIoT.repository.AlertaRepository;
 import com.utp.AgroPiuraIoT.repository.UsuarioCultivoRepository;
 import java.util.Optional;
@@ -24,10 +25,13 @@ public class PermisosCultivo {
 
     private final UsuarioCultivoRepository accesos;
     private final AlertaRepository alertas;
+    private final AlertaNodoRepository alertasNodo;
 
-    public PermisosCultivo(UsuarioCultivoRepository accesos, AlertaRepository alertas) {
+    public PermisosCultivo(UsuarioCultivoRepository accesos, AlertaRepository alertas,
+                           AlertaNodoRepository alertasNodo) {
         this.accesos = accesos;
         this.alertas = alertas;
+        this.alertasNodo = alertasNodo;
     }
 
     @Transactional(readOnly = true)
@@ -49,6 +53,16 @@ public class PermisosCultivo {
         }
         return alertas.findById(idAlerta)
                 .map(a -> puedeVer(a.getUmbral().getCultivo().getIdCultivo(), auth))
+                .orElse(false);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean puedeVerAlertaNodo(Integer idAlertaNodo, Authentication auth) {
+        if (idAlertaNodo == null) {
+            return false;
+        }
+        return alertasNodo.findById(idAlertaNodo)
+                .map(a -> puedeVer(a.getCultivo().getIdCultivo(), auth))
                 .orElse(false);
     }
 

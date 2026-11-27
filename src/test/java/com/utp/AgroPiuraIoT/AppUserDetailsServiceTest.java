@@ -9,6 +9,7 @@ import com.utp.AgroPiuraIoT.security.AppUserDetailsService;
 import com.utp.AgroPiuraIoT.service.AccesoService;
 import com.utp.AgroPiuraIoT.service.UsuarioService;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -96,6 +97,23 @@ class AppUserDetailsServiceTest {
 
         UserDetails userDetails = userDetailsService.loadUserByUsername("inactivo@agropiura.pe");
         assertFalse(userDetails.isEnabled());
+    }
+
+    @Test
+    void usuarioBloqueadoNoEstaDesbloqueadoYSeDesbloqueaAlVencer() {
+        Usuario usuario = usuarioService.registrar(
+                new RegistroRequest("Bloqueado", "bloqueado@agropiura.pe", "password123", "password123"));
+        usuario.setBloqueadoHasta(LocalDateTime.now().plusMinutes(15));
+        usuarioRepository.save(usuario);
+
+        UserDetails bloqueado = userDetailsService.loadUserByUsername("bloqueado@agropiura.pe");
+        assertFalse(bloqueado.isAccountNonLocked());
+
+        usuario.setBloqueadoHasta(LocalDateTime.now().minusMinutes(1));
+        usuarioRepository.save(usuario);
+
+        UserDetails desbloqueado = userDetailsService.loadUserByUsername("bloqueado@agropiura.pe");
+        assertTrue(desbloqueado.isAccountNonLocked());
     }
 
     @Test

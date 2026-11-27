@@ -4,6 +4,7 @@ import com.utp.AgroPiuraIoT.model.entity.Usuario;
 import com.utp.AgroPiuraIoT.model.entity.UsuarioCultivo;
 import com.utp.AgroPiuraIoT.repository.UsuarioCultivoRepository;
 import com.utp.AgroPiuraIoT.repository.UsuarioRepository;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
@@ -46,7 +47,9 @@ public class AppUserDetailsService implements UserDetailsService {
                 }
             }
         }
-        boolean activo = "activo".equalsIgnoreCase(usuario.getEstado());
-        return new User(usuario.getCorreo(), usuario.getContrasena(), activo, true, true, true, autoridades);
+        boolean activo = usuario.estaActivo();
+        boolean noBloqueado = !usuario.estaBloqueado(LocalDateTime.now());
+        return new User(usuario.getCorreo(), usuario.getContrasena(),
+                activo, true, true, noBloqueado, autoridades);
     }
 }

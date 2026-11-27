@@ -23,11 +23,13 @@
             <a class="metrica" th:href="@{/cultivos}">
                 <span class="metrica-etiqueta"><svg th:replace="~{components/icons :: icono('brote')}"></svg> Cultivos activos</span>
                 <strong class="metrica-valor" th:text="${resumen.cultivosActivos}">3</strong>
+                <span class="metrica-nota"
+                      th:text="${resumen.nodosTotal > 0} ? (${resumen.nodosEnLinea} + ' de ' + ${resumen.nodosTotal} + ' nodos en línea') : 'Sin nodos registrados'">0 de 0 nodos en línea</span>
             </a>
             <a class="metrica" th:href="@{/alertas}" th:classappend="${resumen.alertasActivas > 0} ? ' en-alerta'">
-                <span class="metrica-etiqueta"><svg th:replace="~{components/icons :: icono('campana')}"></svg> Alertas pendientes</span>
+                <span class="metrica-etiqueta"><svg th:replace="~{components/icons :: icono('campana')}"></svg> Alertas abiertas</span>
                 <strong class="metrica-valor" th:text="${resumen.alertasActivas}">0</strong>
-                <span class="metrica-nota" th:text="${resumen.alertasActivas > 0} ? 'Requieren atención' : 'Todo dentro de rango'">Todo dentro de rango</span>
+                <span class="metrica-nota" th:text="${resumen.alertasActivas > 0} ? 'Episodios fuera de rango' : 'Todo dentro de rango'">Todo dentro de rango</span>
             </a>
             <div class="metrica">
                 <span class="metrica-etiqueta"><svg th:replace="~{components/icons :: icono('gota')}"></svg> Humedad promedio</span>
@@ -69,11 +71,17 @@
                             <a class="cultivo-fila" th:href="@{/cultivos/{id}(id=${c.idCultivo})}">
                                 <div>
                                     <div class="cultivo-nombre" th:text="${c.nombre}">Mango · Parcela A</div>
-                                    <span class="estado-movil">
-                                        <span class="estado alerta" th:if="${c.estado} == 'ALERTA'">Alerta</span>
-                                        <span class="estado ok" th:if="${c.estado} == 'NORMAL'">Normal</span>
-                                        <span class="estado sin-datos" th:if="${c.estado} == 'SIN_DATOS'">Sin datos</span>
-                                    </span>
+                                    <div class="estado-grupo">
+                                        <span class="estado ok" th:if="${c.estadoConexion == 'EN_LINEA'}">En línea</span>
+                                        <span class="estado alerta" th:if="${c.estadoConexion == 'SIN_CONEXION'}">Sin conexión</span>
+                                        <span class="estado sin-datos" th:if="${c.estadoConexion == 'INACTIVO'}">Nodo inactivo</span>
+                                        <span class="estado sin-datos" th:if="${c.estadoConexion == 'SIN_NODOS'}">Sin nodos</span>
+                                        <span class="estado-movil">
+                                            <span class="estado alerta" th:if="${c.estado} == 'ALERTA'">Alerta</span>
+                                            <span class="estado ok" th:if="${c.estado} == 'NORMAL'">Normal</span>
+                                            <span class="estado sin-datos" th:if="${c.estado} == 'SIN_DATOS'">Sin datos</span>
+                                        </span>
+                                    </div>
                                 </div>
                                 <div class="cultivo-humedad">
                                     <div class="banda" style="--min:35;--max:80"

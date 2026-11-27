@@ -8,6 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "usuarios")
@@ -33,6 +34,12 @@ public class Usuario {
     @Column(name = "fecha_registro")
     private LocalDate fechaRegistro;
 
+    @Column(name = "intentos_fallidos", nullable = false)
+    private int intentosFallidos = 0;
+
+    @Column(name = "bloqueado_hasta")
+    private LocalDateTime bloqueadoHasta;
+
     @PrePersist
     protected void prePersist() {
         if (fechaRegistro == null) {
@@ -41,6 +48,19 @@ public class Usuario {
         if (estado == null) {
             estado = "activo";
         }
+    }
+
+    public boolean estaActivo() {
+        return "activo".equalsIgnoreCase(estado);
+    }
+
+    public boolean estaBloqueado(LocalDateTime ahora) {
+        return bloqueadoHasta != null && bloqueadoHasta.isAfter(ahora);
+    }
+
+    public void reiniciarIntentosFallidos() {
+        this.intentosFallidos = 0;
+        this.bloqueadoHasta = null;
     }
 
     public Integer getIdUsuario() {
@@ -89,5 +109,21 @@ public class Usuario {
 
     public void setFechaRegistro(LocalDate fechaRegistro) {
         this.fechaRegistro = fechaRegistro;
+    }
+
+    public int getIntentosFallidos() {
+        return intentosFallidos;
+    }
+
+    public void setIntentosFallidos(int intentosFallidos) {
+        this.intentosFallidos = intentosFallidos;
+    }
+
+    public LocalDateTime getBloqueadoHasta() {
+        return bloqueadoHasta;
+    }
+
+    public void setBloqueadoHasta(LocalDateTime bloqueadoHasta) {
+        this.bloqueadoHasta = bloqueadoHasta;
     }
 }

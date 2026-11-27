@@ -5,11 +5,29 @@
 - Login por formulario con Spring Security (`config/SecurityConfig`). El correo es el
   nombre de usuario.
 - Contraseñas guardadas con **BCrypt**; nunca en texto plano ni en logs.
+- **Política de contraseñas (C1):** en el registro (`RegistroRequest` y `UsuarioService`) se
+  exigen entre 8 y 72 caracteres combinando al menos una letra y un número. Las cuentas
+  existentes previas siguen pudiendo iniciar sesión.
+- **Estado de cuenta y bloqueo temporal (C1):** `AppUserDetailsService` marca como
+  deshabilitadas las cuentas con `estado != 'activo'` y como bloqueadas las que tienen
+  `bloqueado_hasta` vigente. `EventosAutenticacionListener` escucha los eventos de
+  autenticación de Spring Security: 5 intentos fallidos bloquean la cuenta por 15 minutos
+  (configurables vía `agro.seguridad.max-intentos-fallidos` y `agro.seguridad.bloqueo-minutos`);
+  un ingreso correcto reinicia el contador.
+- **No enumeración de usuarios:** todos los fallos de login (correo inexistente, clave
+  incorrecta, cuenta inactiva o bloqueada) redirigen a `/login?error` con el mismo mensaje
+  genérico.
+- **Auditoría:** los inicios de sesión exitosos (`LOGIN_EXITOSO`), fallos (`LOGIN_FALLIDO`) y
+  bloqueos (`CUENTA_BLOQUEADA`) se registran en la tabla `auditoria` vía `AuditoriaService`.
 - Rutas públicas: `/`, `/login`, `/registro`, `/css/**`, `/js/**`, `/img/**`, `/error`.
   Todo lo demás exige sesión y redirige a `/login`.
-- `/api/**` está **cerrada para todos** (`denyAll`). La API de telemetría ya existe, pero
-  abrirla sin autenticar cada nodo permitiría escribir lecturas en cultivos ajenos. Se abre
-  en el issue A2, con token por nodo.
+- `/api/**` (A2) usa una cadena de seguridad separada (`@Order(1)`, `SessionCreationPolicy.STATELESS`,
+  sin CSRF y sin redirección al login). Solo `POST /api/telemetria` está abierto y exige
+  cabecera `Authorization: Bearer <token>` de un nodo activo (`ROLE_NODO`); el token se almacena
+  cifrado con BCrypt (`dispositivo_iot.token_hash`), se muestra una sola vez al crearlo o
+  regenerarlo, y cualquier otro endpoint bajo `/api/**` queda denegado. Sin token o con token
+  inválido responde `401` en JSON; si el nodo está inactivo responde `403` en JSON. Ver
+  [12-api-de-lecturas.md](12-api-de-lecturas.md).
 - Login correcto → `/dashboard`. Login fallido → `/login?error`. Cerrar sesión (POST
   `/logout`) borra la cookie `JSESSIONID` y vuelve a `/?logout` con un aviso.
 - **CSRF activo** en todos los formularios POST. Con `th:action` Thymeleaf añade el token
@@ -78,5 +96,4 @@ se filtren detalles internos.
 
 ## Pendiente
 
-- Límite de intentos de inicio de sesión (protección contra fuerza bruta).
-- Cabeceras de seguridad adicionales (Content-Security-Policy) si se publica en internet.
+- Cabeceras de seguridad adicionales (Content-Security-Policy) en C2 si se publica en internet.

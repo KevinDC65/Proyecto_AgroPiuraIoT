@@ -17,6 +17,7 @@ import com.utp.AgroPiuraIoT.repository.SensorRepository;
 import com.utp.AgroPiuraIoT.repository.TipoSensorRepository;
 import com.utp.AgroPiuraIoT.repository.UsuarioCultivoRepository;
 import com.utp.AgroPiuraIoT.repository.UsuarioRepository;
+import com.utp.AgroPiuraIoT.security.TokenNodoService;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -43,11 +44,13 @@ public class CultivoService {
     private final SensorRepository sensores;
     private final TipoSensorRepository tipos;
     private final AlertasService alertas;
+    private final TokenNodoService tokenNodoService;
 
     public CultivoService(CultivoRepository cultivos, DispositivoIoTRepository dispositivos,
                           UsuarioRepository usuarios, UsuarioCultivoRepository accesos,
                           RolRepository roles, SensorRepository sensores,
-                          TipoSensorRepository tipos, AlertasService alertas) {
+                          TipoSensorRepository tipos, AlertasService alertas,
+                          TokenNodoService tokenNodoService) {
         this.cultivos = cultivos;
         this.dispositivos = dispositivos;
         this.usuarios = usuarios;
@@ -56,6 +59,7 @@ public class CultivoService {
         this.sensores = sensores;
         this.tipos = tipos;
         this.alertas = alertas;
+        this.tokenNodoService = tokenNodoService;
     }
 
     /** Todos los cultivos (uso interno y pruebas; la web usa {@link #listarPara}). */
@@ -162,6 +166,8 @@ public class CultivoService {
     public DispositivoIoT registrarDispositivo(Integer idCultivo) {
         Cultivo cultivo = buscar(idCultivo);
         DispositivoIoT dispositivo = dispositivos.save(new DispositivoIoT());
+        dispositivo.setTokenHash(tokenNodoService.generarPara(dispositivo.getIdDispositivo()).tokenHash());
+        dispositivo = dispositivos.save(dispositivo);
         for (TipoSensor tipo : tipos.findAll()) {
             Sensor sensor = new Sensor();
             sensor.setDispositivo(dispositivo);

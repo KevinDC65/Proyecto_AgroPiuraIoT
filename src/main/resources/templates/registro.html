@@ -46,7 +46,8 @@
                 <div class="fila">
                     <label class="campo" th:classappend="${#fields.hasErrors('contrasena')} ? ' con-error'">
                         <span>Contraseña</span>
-                        <input type="password" th:field="*{contrasena}" placeholder="Mínimo 8 caracteres" required minlength="8" autocomplete="new-password">
+                        <input type="password" th:field="*{contrasena}" placeholder="Mín. 8 caracteres, letras y números" required minlength="8" autocomplete="new-password">
+                        <small>Mínimo 8 caracteres combinando letras y números.</small>
                         <span class="error" th:if="${#fields.hasErrors('contrasena')}" th:errors="*{contrasena}"></span>
                     </label>
                     <label class="campo" th:classappend="${#fields.hasErrors('confirmacion')} ? ' con-error'">

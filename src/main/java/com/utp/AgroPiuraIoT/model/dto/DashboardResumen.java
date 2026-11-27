@@ -9,15 +9,20 @@ public record DashboardResumen(
         BigDecimal humedadPromedio,
         BigDecimal temperaturaPromedio,
         String ultimaSincronizacion,
+        long nodosEnLinea,
+        long nodosTotal,
         List<CultivoEstado> cultivos) {
 
     public record CultivoEstado(
-        Integer idCultivo,
-        String nombre,
-        BigDecimal humedad,
-        BigDecimal temperatura,
-        String estado,
-        BigDecimal latitud,
-        BigDecimal longitud) {
-        }
+            Integer idCultivo,
+            String nombre,
+            BigDecimal humedad,
+            BigDecimal temperatura,
+            String estado,
+            BigDecimal latitud,
+            BigDecimal longitud,
+            String estadoConexion,
+            int nodosEnLinea,
+            int nodosTotal) {
+    }
 }

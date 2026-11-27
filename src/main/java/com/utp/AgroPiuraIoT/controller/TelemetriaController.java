@@ -4,9 +4,11 @@ import com.utp.AgroPiuraIoT.exception.RecursoNoEncontradoException;
 import com.utp.AgroPiuraIoT.model.dto.TelemetriaRequest;
 import com.utp.AgroPiuraIoT.model.dto.TelemetriaResponse;
 import com.utp.AgroPiuraIoT.service.TelemetriaService;
+import com.utp.AgroPiuraIoT.service.TelemetriaService.LoteInvalidoException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -24,8 +26,11 @@ public class TelemetriaController {
     }
 
     @PostMapping
-    public ResponseEntity<TelemetriaResponse> recibirTelemetria(@RequestBody(required = false) TelemetriaRequest request) {
-        TelemetriaResponse response = telemetriaService.procesar(request);
+    public ResponseEntity<TelemetriaResponse> recibirTelemetria(
+            @RequestBody(required = false) TelemetriaRequest request,
+            Authentication auth) {
+        Integer idDispositivo = auth != null && auth.getPrincipal() instanceof Integer id ? id : null;
+        TelemetriaResponse response = telemetriaService.procesar(request, idDispositivo);
         return ResponseEntity.ok(response);
     }
 
@@ -33,6 +38,13 @@ public class TelemetriaController {
     public ResponseEntity<TelemetriaResponse> manejarNoEncontrado(RecursoNoEncontradoException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(TelemetriaResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(LoteInvalidoException.class)
+    public ResponseEntity<TelemetriaResponse> manejarLoteInvalido(LoteInvalidoException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(TelemetriaResponse.errorConDetalle(
+                        ex.getMessage(), ex.getLecturasRechazadas(), ex.getErrores()));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
