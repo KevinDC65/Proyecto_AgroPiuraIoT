@@ -182,12 +182,12 @@ class NodoServiceTest {
                         .with(csrf()))
                 .andExpect(status().isForbidden());
 
-        // Administrador sí puede regenerar token y recibe flash con tokenGenerado
+        // Administrador sí puede regenerar token y recibe flash con tokenNodo
         mockMvc.perform(post("/cultivos/{id}/dispositivos/{idD}/token", cultivo.getIdCultivo(), idNodo)
                         .with(user(ADMIN))
                         .with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/cultivos/" + cultivo.getIdCultivo()))
-                .andExpect(flash().attributeExists("tokenGenerado", "tokenNodoId"));
+                .andExpect(flash().attributeExists("tokenNodo", "tokenNodoId"));
     }
 }

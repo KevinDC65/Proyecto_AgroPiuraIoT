@@ -13,6 +13,18 @@ PostgreSQL, base `agropiura`, esquema `public`, **15 tablas**.
 | `database/migraciones/2026-11-24_B1_alertas_episodios_severidad.sql` | BD **existente** (B1). Añade `estado`, `severidad`, `direccion`, `valor_extremo`, `cantidad_lecturas`, `fecha_cierre` e índice `idx_alertas_umbral_estado` en `alertas`, rellenando filas previas. Idempotente |
 | `database/migraciones/2026-11-24_A2_api_telemetria_y_nodos.sql` | BD **existente** (A1/A2). Añade `token_hash` y `ultima_conexion` en `dispositivo_iot`, crea la tabla `alerta_nodo` y sus índices. Idempotente (`IF NOT EXISTS`) |
 
+### Migraciones
+
+Desde el sprint 1, cada cambio de esquema va en un script de `database/migraciones/`
+(`AAAA-MM-DD_codigo_descripcion.sql`), idempotente, y se refleja también en
+`esquema.sql` y en la entidad. Una BD **nueva** no los necesita: `esquema.sql` ya los
+incluye. Una BD **existente** debe ejecutar los que aún no tenga, en orden de fecha; si no,
+la aplicación no arranca (`Schema-validation: missing column`).
+
+| Script | Cambio |
+|---|---|
+| `2026-11-25_A1_token_y_conexion_nodo.sql` | `dispositivo_iot.token_hash` y `dispositivo_iot.ultima_conexion` (A1, ver [12-api-de-lecturas.md](12-api-de-lecturas.md)) |
+
 Al arrancar, la aplicación avisa en el log si hay cultivos sin administrador
 (`N cultivo(s) sin administrador, invisibles para todos los usuarios`).
 
@@ -40,7 +52,7 @@ Los catálogos y el administrador de demostración los inserta la aplicación al
 | `roles` | Catálogo de roles por cultivo | `nombre_rol` (único) |
 | `usuario_cultivo` | Qué usuario accede a qué cultivo y con qué rol | `id_usuario`, `id_cultivo`, `id_rol` (único por usuario y cultivo) |
 | `cultivo` | Parcelas | `nombre`, `tipo_cultivo`, `ubicacion`, `latitud`, `longitud`, `area_ha` |
-| `dispositivo_iot` | Nodos ESP32 | `estado` (`activo`/`inactivo`), `fecha_instalacion`, `token_hash` (BCrypt), `ultima_conexion` |
+| `dispositivo_iot` | Nodos ESP32 | `estado` (`activo`/`inactivo`), `fecha_instalacion`, `token_hash` (hash BCrypt del token del nodo; nunca el token en texto plano), `ultima_conexion` (última vez que envió lecturas a la API) |
 | `cultivo_dispositivo` | Asignación de nodos a cultivos (muchos a muchos) | `id_cultivo`, `id_dispositivo` (único por par) |
 | `usuario_dispositivo` | Vinculación de usuarios a nodos. Viene del modelo del informe; hoy no tiene entidad JPA ni se usa | `id_usuario`, `id_dispositivo`, `estado` |
 | `tipo_sensor` | Catálogo de variables medidas | `nombre_tipo`, `unidad_medida` |

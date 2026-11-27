@@ -7,8 +7,6 @@ import com.utp.AgroPiuraIoT.model.entity.DispositivoIoT;
 import com.utp.AgroPiuraIoT.repository.AlertaNodoRepository;
 import com.utp.AgroPiuraIoT.repository.CultivoRepository;
 import com.utp.AgroPiuraIoT.repository.DispositivoIoTRepository;
-import com.utp.AgroPiuraIoT.security.TokenNodoService;
-import com.utp.AgroPiuraIoT.security.TokenNodoService.TokenGenerado;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -22,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Estado de conexión, gestión administrativa auditada y monitoreo de desconexión
- * de nodos IoT (A2).
+ * de nodos IoT (A2), integrado con la generación de tokens de {@link NodoTokenService} (A1).
  */
 @Service
 public class NodoService {
@@ -39,7 +37,7 @@ public class NodoService {
     private final CultivoRepository cultivos;
     private final DispositivoIoTRepository dispositivos;
     private final AlertaNodoRepository alertasNodo;
-    private final TokenNodoService tokenNodoService;
+    private final NodoTokenService nodoTokenService;
     private final AuditoriaService auditoria;
     private final AlertasService alertas;
 
@@ -52,7 +50,7 @@ public class NodoService {
             CultivoRepository cultivos,
             DispositivoIoTRepository dispositivos,
             AlertaNodoRepository alertasNodo,
-            TokenNodoService tokenNodoService,
+            NodoTokenService nodoTokenService,
             AuditoriaService auditoria,
             AlertasService alertas,
             @Value("${agro.iot.nodo.minutos-en-linea:30}") long minutosEnLinea,
@@ -62,7 +60,7 @@ public class NodoService {
         this.cultivos = cultivos;
         this.dispositivos = dispositivos;
         this.alertasNodo = alertasNodo;
-        this.tokenNodoService = tokenNodoService;
+        this.nodoTokenService = nodoTokenService;
         this.auditoria = auditoria;
         this.alertas = alertas;
         this.minutosEnLinea = Math.max(1, minutosEnLinea);
@@ -103,15 +101,13 @@ public class NodoService {
     }
 
     /**
-     * Registra un nodo nuevo para el cultivo, genera su token Bearer seguro (BCrypt)
+     * Registra un nodo nuevo para el cultivo con su token BCrypt (vía A1 {@link CultivoService#registrarNodo})
      * y registra el alta en la auditoría. El token en claro solo se devuelve aquí una vez.
      */
     @Transactional
     public NodoConToken registrarConToken(Integer idCultivo, String correoAdmin) {
-        DispositivoIoT dispositivo = cultivoService.registrarDispositivo(idCultivo);
-        TokenGenerado token = tokenNodoService.generarPara(dispositivo.getIdDispositivo());
-        dispositivo.setTokenHash(token.tokenHash());
-        dispositivo = dispositivos.save(dispositivo);
+        CultivoService.NodoRegistrado registro = cultivoService.registrarNodo(idCultivo);
+        DispositivoIoT dispositivo = registro.nodo();
 
         auditoria.registrarPorCorreo(
                 correoAdmin,
@@ -120,7 +116,7 @@ public class NodoService {
                 dispositivo.getIdDispositivo(),
                 "Nodo #" + dispositivo.getIdDispositivo() + " registrado en cultivo #" + idCultivo);
 
-        return new NodoConToken(dispositivo, token.tokenPlano());
+        return new NodoConToken(dispositivo, registro.token());
     }
 
     /** Activa o desactiva un nodo del cultivo y lo registra en auditoría (C1). */
@@ -146,15 +142,13 @@ public class NodoService {
     }
 
     /**
-     * Regenera el token del nodo (invalida inmediatamente el anterior) y registra
-     * la acción en auditoría sin exponer jamás el token.
+     * Regenera el token del nodo (invalida inmediatamente el anterior) mediante
+     * {@link NodoTokenService} y registra la acción en auditoría sin exponer jamás el token.
      */
     @Transactional
     public String regenerarToken(Integer idCultivo, Integer idDispositivo, String correoAdmin) {
         DispositivoIoT dispositivo = buscarDispositivoDeCultivo(idCultivo, idDispositivo);
-        TokenGenerado nuevo = tokenNodoService.generarPara(idDispositivo);
-        dispositivo.setTokenHash(nuevo.tokenHash());
-        dispositivos.save(dispositivo);
+        String nuevoToken = nodoTokenService.asignarToken(dispositivo);
 
         auditoria.registrarPorCorreo(
                 correoAdmin,
@@ -163,14 +157,14 @@ public class NodoService {
                 idDispositivo,
                 "Token regenerado para nodo #" + idDispositivo + " en cultivo #" + idCultivo);
         log.info("Token regenerado para nodo {} en cultivo {}", idDispositivo, idCultivo);
-        return nuevo.tokenPlano();
+        return nuevoToken;
     }
 
     /** Registra la última conexión del nodo y cierra alertas de desconexión abiertas. */
     @Transactional
     public void registrarConexion(DispositivoIoT dispositivo, LocalDateTime fecha) {
         LocalDateTime instante = fecha != null ? fecha : LocalDateTime.now();
-        dispositivo.setUltimaConexion(instante);
+        dispositivo.registrarConexion(instante);
         dispositivos.save(dispositivo);
         cerrarAlertasDesconexion(dispositivo.getIdDispositivo(), instante);
     }

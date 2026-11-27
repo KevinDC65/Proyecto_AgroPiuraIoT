@@ -270,19 +270,6 @@ button, a, [role="button"], summary, label { touch-action: manipulation; }
 .estado.severidad-critica::before { border-radius: 1px; transform: rotate(45deg) scale(0.9); }
 .estado-grupo { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; }
 .estado-nota { display: block; font-size: var(--t-xs); color: var(--tinta-suave); margin-top: 0.2rem; }
-.token-caja {
-    display: block;
-    margin-top: 0.45rem;
-    padding: 0.55rem 0.7rem;
-    border-radius: var(--r-sm);
-    background: var(--papel);
-    border: 1px solid var(--linea);
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: var(--t-sm);
-    color: var(--tinta);
-    word-break: break-all;
-    user-select: all;
-}
 
 /* ---------- avisos (flash) ---------- */
 .aviso {
@@ -299,6 +286,19 @@ button, a, [role="button"], summary, label { touch-action: manipulation; }
 .aviso.ok { background: var(--ok-fondo); border-color: #b9d3b6; color: #1f4a2b; }
 .aviso.error { background: var(--alerta-fondo); border-color: #eab3a8; color: #7d1a11; }
 .aviso.info { background: var(--papel); border-color: var(--linea); color: var(--tinta-2); }
+.token-nodo > div { min-width: 0; }
+.token-nodo p { margin: 4px 0 8px; }
+.token-valor {
+    display: block;
+    padding: 8px 10px;
+    border: 1px solid var(--linea);
+    border-radius: var(--r);
+    background: #fff;
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    font-size: 0.95rem;
+    overflow-wrap: anywhere;
+    user-select: all;
+}
 
 /* ---------- formularios ---------- */
 .form { display: grid; gap: 1rem; }

@@ -9,7 +9,7 @@
 -- =====================================================================
 
 ALTER TABLE public.dispositivo_iot
-    ADD COLUMN IF NOT EXISTS token_hash character varying(255),
+    ADD COLUMN IF NOT EXISTS token_hash character varying(100),
     ADD COLUMN IF NOT EXISTS ultima_conexion timestamp without time zone;
 
 CREATE TABLE IF NOT EXISTS public.alerta_nodo (

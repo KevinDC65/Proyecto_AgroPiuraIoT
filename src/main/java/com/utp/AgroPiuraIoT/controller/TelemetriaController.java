@@ -4,7 +4,6 @@ import com.utp.AgroPiuraIoT.exception.RecursoNoEncontradoException;
 import com.utp.AgroPiuraIoT.model.dto.TelemetriaRequest;
 import com.utp.AgroPiuraIoT.model.dto.TelemetriaResponse;
 import com.utp.AgroPiuraIoT.service.TelemetriaService;
-import com.utp.AgroPiuraIoT.service.TelemetriaService.LoteInvalidoException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -38,13 +37,6 @@ public class TelemetriaController {
     public ResponseEntity<TelemetriaResponse> manejarNoEncontrado(RecursoNoEncontradoException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(TelemetriaResponse.error(ex.getMessage()));
-    }
-
-    @ExceptionHandler(LoteInvalidoException.class)
-    public ResponseEntity<TelemetriaResponse> manejarLoteInvalido(LoteInvalidoException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(TelemetriaResponse.errorConDetalle(
-                        ex.getMessage(), ex.getLecturasRechazadas(), ex.getErrores()));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

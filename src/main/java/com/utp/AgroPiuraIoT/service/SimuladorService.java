@@ -110,13 +110,13 @@ public class SimuladorService {
         }
         // Mantener los valores simulados dentro del rango físico de cada variable.
         BigDecimal resultado = BigDecimal.valueOf(valor).setScale(2, RoundingMode.HALF_UP);
-        return RangoFisico.para(sensor.getTipoSensor().getNombreTipo())
+        return RangoFisico.de(sensor.getTipoSensor().getNombreTipo())
                 .map(rango -> {
-                    if (resultado.compareTo(rango.minimo()) < 0) {
-                        return rango.minimo().setScale(2, RoundingMode.HALF_UP);
+                    if (resultado.compareTo(rango.getMinimo()) < 0) {
+                        return rango.getMinimo().setScale(2, RoundingMode.HALF_UP);
                     }
-                    if (resultado.compareTo(rango.maximo()) > 0) {
-                        return rango.maximo().setScale(2, RoundingMode.HALF_UP);
+                    if (resultado.compareTo(rango.getMaximo()) > 0) {
+                        return rango.getMaximo().setScale(2, RoundingMode.HALF_UP);
                     }
                     return resultado;
                 })

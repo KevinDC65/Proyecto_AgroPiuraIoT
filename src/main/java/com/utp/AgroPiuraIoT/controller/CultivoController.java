@@ -128,7 +128,8 @@ public class CultivoController {
     public String registrarDispositivo(@PathVariable Integer id, Authentication auth, RedirectAttributes flash) {
         var creado = nodos.registrarConToken(id, auth.getName());
         flash.addFlashAttribute("mensaje", "Nodo #" + creado.dispositivo().getIdDispositivo() + " registrado");
-        flash.addFlashAttribute("tokenGenerado", creado.tokenPlano());
+        // El token solo viaja en este flash: se muestra una vez y no queda guardado en texto plano.
+        flash.addFlashAttribute("tokenNodo", creado.tokenPlano());
         flash.addFlashAttribute("tokenNodoId", creado.dispositivo().getIdDispositivo());
         return "redirect:/cultivos/" + id;
     }
@@ -155,7 +156,7 @@ public class CultivoController {
         String tokenPlano = nodos.regenerarToken(id, idDispositivo, auth.getName());
         flash.addFlashAttribute("mensaje",
                 "Token regenerado para nodo #" + idDispositivo + ". El token anterior quedó invalidado.");
-        flash.addFlashAttribute("tokenGenerado", tokenPlano);
+        flash.addFlashAttribute("tokenNodo", tokenPlano);
         flash.addFlashAttribute("tokenNodoId", idDispositivo);
         return "redirect:/cultivos/" + id;
     }

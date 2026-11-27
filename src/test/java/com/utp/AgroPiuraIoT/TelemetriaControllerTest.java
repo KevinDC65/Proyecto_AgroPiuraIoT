@@ -268,8 +268,7 @@ class TelemetriaControllerTest {
                         { "tipoSensor": "humedad_suelo", "valor": 12.00 },
                         { "tipoSensor": "humedad_suelo", "valor": 150.00 },
                         { "tipoSensor": "ph_suelo", "valor": 6.50 },
-                        { "tipoSensor": "ph_suelo", "valor": 22.00 },
-                        { "tipoSensor": "sensor_inexistente", "valor": 10.00 }
+                        { "tipoSensor": "ph_suelo", "valor": 22.00 }
                     ]
                 }
                 """;
@@ -279,18 +278,18 @@ class TelemetriaControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status", is("ok")))
+                .andExpect(jsonPath("$.status", is("parcial")))
                 .andExpect(jsonPath("$.lecturasProcesadas", is(2)))
-                .andExpect(jsonPath("$.lecturasRechazadas", is(3)))
+                .andExpect(jsonPath("$.lecturasRechazadas", is(2)))
                 .andExpect(jsonPath("$.alertasGeneradas", is(1)))
-                .andExpect(jsonPath("$.errores", hasSize(3)));
+                .andExpect(jsonPath("$.rechazos", hasSize(2)));
 
         assertEquals(1, lecturaRepository.findBySensorIdSensorOrderByFechaHoraDesc(sensorHumedad.getIdSensor()).size());
         assertEquals(1, alertaRepository.findByUmbralCultivoIdCultivoOrderByFechaAlertaDesc(cultivo.getIdCultivo()).size());
     }
 
     @Test
-    void postLecturaUnicaFueraDeRangoFisico_retorna400() throws Exception {
+    void postLecturaUnicaFueraDeRangoFisico_retornaRechazadoSinGuardar() throws Exception {
         String json = """
                 {
                     "tipoSensor": "humedad_suelo",
@@ -302,9 +301,11 @@ class TelemetriaControllerTest {
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenPlano)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status", is("error")))
-                .andExpect(jsonPath("$.mensaje", containsString("rango físico")));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status", is("rechazado")))
+                .andExpect(jsonPath("$.lecturasProcesadas", is(0)))
+                .andExpect(jsonPath("$.lecturasRechazadas", is(1)))
+                .andExpect(jsonPath("$.rechazos[0]", containsString("rango físico")));
 
         assertEquals(0, lecturaRepository.findBySensorIdSensorOrderByFechaHoraDesc(sensorHumedad.getIdSensor()).size());
     }

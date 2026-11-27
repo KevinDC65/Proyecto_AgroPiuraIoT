@@ -14,7 +14,9 @@ import com.utp.AgroPiuraIoT.repository.LecturaRepository;
 import com.utp.AgroPiuraIoT.repository.SensorRepository;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,9 +25,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Ingesta de telemetría IoT (A1/A2): valida que el payload corresponda al nodo
- * autenticado, actualiza {@code ultima_conexion}, descarta lecturas físicamente
- * imposibles ({@link RangoFisico}) soportando lotes mixtos, y evalúa cada lectura
- * válida mediante {@link AlertasService#evaluar(Lectura)}.
+ * autenticado, descarta lecturas físicamente imposibles ({@link RangoFisico})
+ * reportándolas en {@code rechazos}, evalúa cada lectura válida mediante
+ * {@link AlertasService#evaluar(Lectura)}, y actualiza {@code ultima_conexion}
+ * cerrando alertas abiertas de desconexión.
  */
 @Service
 public class TelemetriaService {
@@ -50,12 +53,13 @@ public class TelemetriaService {
         this.nodoService = nodoService;
     }
 
-    /** Compatibilidad interna para llamadas sin token explícito. */
+    /** Procesamiento directo a nivel de servicio (A1 y pruebas internas). */
     @Transactional
     public TelemetriaResponse procesar(TelemetriaRequest request) {
         return procesar(request, null);
     }
 
+    /** Procesamiento autenticado por token Bearer de nodo (A2). */
     @Transactional
     public TelemetriaResponse procesar(TelemetriaRequest request, Integer idDispositivoAutenticado) {
         if (request == null) {
@@ -77,101 +81,66 @@ public class TelemetriaService {
             throw new IllegalArgumentException("El payload no contiene ninguna lectura válida");
         }
 
-        DispositivoIoT nodoAutenticado = null;
-        if (idDispositivoAutenticado != null) {
-            nodoAutenticado = dispositivos.findById(idDispositivoAutenticado)
-                    .orElseThrow(() -> new RecursoNoEncontradoException(
-                            "Dispositivo no encontrado: " + idDispositivoAutenticado));
-        }
-
-        boolean esLoteMultiple = items.size() > 1;
         int lecturasProcesadas = 0;
-        int lecturasRechazadas = 0;
         int alertasGeneradas = 0;
-        List<String> errores = new ArrayList<>();
+        List<String> rechazos = new ArrayList<>();
+        Map<Integer, DispositivoIoT> nodosQueReportaron = new LinkedHashMap<>();
 
-        for (int i = 0; i < items.size(); i++) {
-            LecturaItemRequest item = items.get(i);
-            int numeroItem = i + 1;
-
+        for (LecturaItemRequest item : items) {
             if (idDispositivoAutenticado != null) {
                 if (item.getIdDispositivo() != null
                         && !item.getIdDispositivo().equals(idDispositivoAutenticado)) {
-                    String msg = String.format("El dispositivo %d no corresponde al nodo autenticado (%d)",
-                            item.getIdDispositivo(), idDispositivoAutenticado);
-                    if (!esLoteMultiple) {
-                        throw new IllegalArgumentException(msg);
-                    }
-                    lecturasRechazadas++;
-                    errores.add("Lectura #" + numeroItem + ": " + msg);
-                    continue;
+                    throw new IllegalArgumentException(String.format(
+                            "El dispositivo %d no corresponde al nodo autenticado (%d)",
+                            item.getIdDispositivo(), idDispositivoAutenticado));
                 }
                 item.setIdDispositivo(idDispositivoAutenticado);
             }
 
-            try {
-                if (item.getValor() == null) {
-                    throw new IllegalArgumentException("El valor de la lectura no puede ser nulo");
-                }
+            if (item.getValor() == null) {
+                throw new IllegalArgumentException("El valor de la lectura no puede ser nulo");
+            }
 
-                Sensor sensor = resolverSensor(item);
-                validarRangoFisico(sensor, item);
+            Sensor sensor = resolverSensor(item);
+            DispositivoIoT nodo = sensor.getDispositivo();
+            nodosQueReportaron.putIfAbsent(nodo.getIdDispositivo(), nodo);
 
-                Lectura lectura = sensor.registrarLectura(item.getValor());
-                if (item.getFechaHora() != null) {
-                    lectura.setFechaHora(item.getFechaHora());
-                }
-                lectura = lecturas.save(lectura);
-                lecturasProcesadas++;
+            String tipo = sensor.getTipoSensor().getNombreTipo();
+            if (!RangoFisico.esPosible(tipo, item.getValor())) {
+                String motivo = String.format("%s = %s fuera del rango físico (%s): posible falla de sensor",
+                        tipo, item.getValor().toPlainString(),
+                        RangoFisico.de(tipo).map(RangoFisico::describir).orElse("?"));
+                log.warn("Lectura rechazada del nodo {}, sensor {}: {}",
+                        nodo.getIdDispositivo(), sensor.getIdSensor(), motivo);
+                rechazos.add(motivo);
+                continue;
+            }
 
-                if (nodoAutenticado == null) {
-                    nodoAutenticado = sensor.getDispositivo();
-                }
+            Lectura lectura = sensor.registrarLectura(item.getValor());
+            if (item.getFechaHora() != null) {
+                lectura.setFechaHora(item.getFechaHora());
+            }
+            lectura = lecturas.save(lectura);
+            lecturasProcesadas++;
 
-                Optional<Alerta> alerta = alertas.evaluar(lectura);
-                if (alerta.isPresent()) {
-                    alertasGeneradas++;
-                }
-            } catch (RecursoNoEncontradoException | IllegalArgumentException ex) {
-                if (!esLoteMultiple) {
-                    throw ex;
-                }
-                lecturasRechazadas++;
-                errores.add("Lectura #" + numeroItem + ": " + ex.getMessage());
+            Optional<Alerta> alerta = alertas.evaluar(lectura);
+            if (alerta.isPresent()) {
+                alertasGeneradas++;
             }
         }
 
-        if (nodoAutenticado != null && lecturasProcesadas > 0) {
-            nodoService.registrarConexion(nodoAutenticado, LocalDateTime.now());
+        // El nodo se comunicó aunque alguna lectura se haya rechazado: cuenta como conexión.
+        LocalDateTime ahora = LocalDateTime.now();
+        for (DispositivoIoT nodo : nodosQueReportaron.values()) {
+            nodoService.registrarConexion(nodo, ahora);
         }
 
-        if (lecturasProcesadas == 0 && !errores.isEmpty()) {
-            throw new LoteInvalidoException("Ninguna lectura del lote es válida", lecturasRechazadas, errores);
+        log.info("Telemetría procesada: {} lecturas guardadas, {} rechazadas, {} alertas generadas",
+                lecturasProcesadas, rechazos.size(), alertasGeneradas);
+        if (!rechazos.isEmpty()) {
+            return TelemetriaResponse.conRechazos(lecturasProcesadas, alertasGeneradas, rechazos);
         }
-
-        if (lecturasRechazadas > 0) {
-            log.warn("Telemetría procesada con observaciones: {} válidas, {} rechazadas, {} alertas",
-                    lecturasProcesadas, lecturasRechazadas, alertasGeneradas);
-            return TelemetriaResponse.okParcial(lecturasProcesadas, lecturasRechazadas, alertasGeneradas, errores);
-        }
-
-        log.info("Telemetría procesada: {} lecturas guardadas, {} alertas evaluadas",
-                lecturasProcesadas, alertasGeneradas);
         return TelemetriaResponse.ok(lecturasProcesadas, alertasGeneradas);
-    }
-
-    private void validarRangoFisico(Sensor sensor, LecturaItemRequest item) {
-        String nombreTipo = sensor.getTipoSensor().getNombreTipo();
-        RangoFisico.para(nombreTipo).ifPresent(rango -> {
-            if (!rango.contiene(item.getValor())) {
-                log.warn("Posible falla de sensor en nodo {} ({}): valor {} fuera del rango físico ({})",
-                        sensor.getDispositivo().getIdDispositivo(), nombreTipo,
-                        item.getValor(), rango.describir());
-                throw new IllegalArgumentException(String.format(
-                        "Valor %s fuera del rango físico para %s (%s)",
-                        item.getValor(), nombreTipo, rango.describir()));
-            }
-        });
     }
 
     private Sensor resolverSensor(LecturaItemRequest item) {
@@ -217,25 +186,5 @@ public class TelemetriaService {
         throw new IllegalArgumentException(String.format(
                 "Debe especificar tipoSensor o idTipoSensor para el dispositivo %d",
                 item.getIdDispositivo()));
-    }
-
-    /** Excepción tipada cuando todas las lecturas de un lote múltiple resultan inválidas. */
-    public static class LoteInvalidoException extends RuntimeException {
-        private final int lecturasRechazadas;
-        private final List<String> errores;
-
-        public LoteInvalidoException(String message, int lecturasRechazadas, List<String> errores) {
-            super(message);
-            this.lecturasRechazadas = lecturasRechazadas;
-            this.errores = errores;
-        }
-
-        public int getLecturasRechazadas() {
-            return lecturasRechazadas;
-        }
-
-        public List<String> getErrores() {
-            return errores;
-        }
     }
 }

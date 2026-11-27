@@ -13,7 +13,7 @@ Esta carpeta contiene dos clientes compatibles con el endpoint autenticado `POST
 1. Inicia sesión como **administrador del cultivo** (por ejemplo `admin@agropiura.com`).
 2. Abre el detalle del cultivo (`/cultivos/{id}`).
 3. Haz clic en **Registrar nodo nuevo** (o en **Regenerar token** sobre un nodo existente).
-4. Copia el token mostrado en pantalla (`ap_<id>_<secreto>`). **Por seguridad solo se muestra una vez**; en la base de datos se guarda únicamente su hash BCrypt.
+4. Copia el token mostrado en pantalla (43 caracteres en Base64 URL). **Por seguridad solo se muestra una vez**; en la base de datos se guarda únicamente su hash BCrypt.
 
 ---
 
@@ -21,32 +21,32 @@ Esta carpeta contiene dos clientes compatibles con el endpoint autenticado `POST
 
 ### En Windows con PowerShell (sin instalar nada)
 ```powershell
-.\iot\simulador-nodo.ps1 -Token "ap_1_TU_TOKEN" -Intervalo 5 -Ciclos 3
-.\iot\simulador-nodo.ps1 -Token "ap_1_TU_TOKEN" -Intervalo 5 -Ciclos 3 -Anomalia
+.\iot\simulador-nodo.ps1 -Token "TU_TOKEN_DE_NODO" -Intervalo 5 -Ciclos 3
+.\iot\simulador-nodo.ps1 -Token "TU_TOKEN_DE_NODO" -Intervalo 5 -Ciclos 3 -Anomalia
 ```
 
 ### Con Python (compatible con Python 3 y 2.7)
 
 ### Envío continuo de lecturas normales (cada 10 segundos)
 ```powershell
-python iot/simulador_nodo.py --url http://localhost:8080/api/telemetria --token ap_1_TU_TOKEN --intervalo 10
+python iot/simulador_nodo.py --url http://localhost:8080/api/telemetria --token TU_TOKEN_DE_NODO --intervalo 10
 ```
 
 ### Envío acotado de 3 rondas con valores anómalos (para disparar episodios de alerta)
 ```powershell
-python iot/simulador_nodo.py --url http://localhost:8080/api/telemetria --token ap_1_TU_TOKEN --intervalo 5 --ciclos 3 --anomalia
+python iot/simulador_nodo.py --url http://localhost:8080/api/telemetria --token TU_TOKEN_DE_NODO --intervalo 5 --ciclos 3 --anomalia
 ```
 
 ### Simular varios nodos en paralelo en cada ronda
 ```powershell
-python iot/simulador_nodo.py --token ap_1_TOKEN_A --token ap_2_TOKEN_B --intervalo 15
+python iot/simulador_nodo.py --token TOKEN_NODO_A --token TOKEN_NODO_B --intervalo 15
 ```
 
 ### Prueba rápida con `curl`
 ```powershell
 curl.exe -X POST http://localhost:8080/api/telemetria `
   -H "Content-Type: application/json" `
-  -H "Authorization: Bearer ap_1_TU_TOKEN" `
+  -H "Authorization: Bearer TU_TOKEN_DE_NODO" `
   -d "{\"lecturas\":[{\"tipoSensor\":\"humedad_suelo\",\"valor\":48.5},{\"tipoSensor\":\"temperatura_ambiente\",\"valor\":27.2}]}"
 ```
 

@@ -32,9 +32,11 @@ public class DispositivoIoT {
     @Column(name = "fecha_instalacion")
     private LocalDate fechaInstalacion;
 
-    @Column(name = "token_hash", length = 255)
+    /** Hash BCrypt del token del nodo; el token en texto plano nunca se guarda. */
+    @Column(name = "token_hash", length = 100)
     private String tokenHash;
 
+    /** Última vez que el nodo envió lecturas a la API. */
     @Column(name = "ultima_conexion")
     private LocalDateTime ultimaConexion;
 
@@ -62,6 +64,10 @@ public class DispositivoIoT {
 
     public boolean tieneToken() {
         return tokenHash != null && !tokenHash.isBlank();
+    }
+
+    public void registrarConexion(LocalDateTime momento) {
+        this.ultimaConexion = momento;
     }
 
     public boolean estaEnLinea(LocalDateTime ahora, long minutosEnLinea) {

@@ -52,6 +52,13 @@ tus cultivos, o el log avisa de cultivos sin administrador), asígnalos a tu usu
 psql -h localhost -U postgres -d agropiura -v correo=tu@correo.com -f database/migracion-datos-anteriores.sql
 ```
 
+Si tu BD ya existía, aplica también las **migraciones** de `database/migraciones/` que aún
+no tengas, en orden de fecha (todas se pueden ejecutar varias veces):
+
+```powershell
+psql -h localhost -U postgres -d agropiura -f database/migraciones/2026-11-25_A1_token_y_conexion_nodo.sql
+```
+
 Detalle de tablas y scripts en [04-base-de-datos.md](04-base-de-datos.md).
 
 ## 2. Configuración local
@@ -144,6 +151,7 @@ Se genera en `target/site/apidocs`.
 | `release version 25 not supported` o `invalid target release: 25` | Maven está usando un JDK anterior | Apuntar `JAVA_HOME` al JDK 25 (ver arriba) |
 | `password authentication failed for user "postgres"` | Falta `DB_PASSWORD` o es incorrecta | Definir la variable de entorno y reiniciar la terminal |
 | `Schema-validation: missing table [...]` | La BD no tiene el esquema | Ejecutar `database/esquema.sql` |
+| `Schema-validation: missing column [...]` | La BD es anterior a una migración | Ejecutar los scripts pendientes de `database/migraciones/` (ver arriba) |
 | `Schema-validation: wrong column type` | El esquema de la BD no coincide con las entidades | Comparar con `database/esquema.sql`; no cambiar `ddl-auto` |
 | `Port 8080 was already in use` | Otra instancia corriendo | Cerrarla o usar `--server.port=8081` |
 | El panel de clima no aparece | Sin `OPENWEATHER_API_KEY` o el cultivo no tiene ubicación | Es el comportamiento esperado |

@@ -102,8 +102,8 @@ public class UmbralService {
     }
 
     private void validarRangoFisico(TipoSensor tipoSensor, UmbralForm form) {
-        RangoFisico.para(tipoSensor.getNombreTipo()).ifPresent(rango -> {
-            if (!rango.contiene(form.valorMinimo()) || !rango.contiene(form.valorMaximo())) {
+        RangoFisico.de(tipoSensor.getNombreTipo()).ifPresent(rango -> {
+            if (!rango.admite(form.valorMinimo()) || !rango.admite(form.valorMaximo())) {
                 String nombreLegible = tipoSensor.getNombreTipo().replace('_', ' ');
                 throw new ReglaNegocioException(
                         "Los valores para " + nombreLegible

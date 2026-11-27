@@ -297,9 +297,12 @@ public class AlertasService {
             }
         }
         if (umbral.getTipoSensor() != null) {
-            Optional<RangoFisico> fisico = RangoFisico.para(umbral.getTipoSensor().getNombreTipo());
-            if (fisico.isPresent() && fisico.get().ancho().signum() > 0) {
-                return fisico.get().ancho();
+            Optional<RangoFisico> fisico = RangoFisico.de(umbral.getTipoSensor().getNombreTipo());
+            if (fisico.isPresent()) {
+                BigDecimal ancho = fisico.get().getMaximo().subtract(fisico.get().getMinimo());
+                if (ancho.signum() > 0) {
+                    return ancho;
+                }
             }
         }
         return BigDecimal.ONE;
