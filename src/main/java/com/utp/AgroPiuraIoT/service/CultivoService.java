@@ -43,11 +43,13 @@ public class CultivoService {
     private final SensorRepository sensores;
     private final TipoSensorRepository tipos;
     private final AlertasService alertas;
+    private final NodoTokenService tokens;
 
     public CultivoService(CultivoRepository cultivos, DispositivoIoTRepository dispositivos,
                           UsuarioRepository usuarios, UsuarioCultivoRepository accesos,
                           RolRepository roles, SensorRepository sensores,
-                          TipoSensorRepository tipos, AlertasService alertas) {
+                          TipoSensorRepository tipos, AlertasService alertas,
+                          NodoTokenService tokens) {
         this.cultivos = cultivos;
         this.dispositivos = dispositivos;
         this.usuarios = usuarios;
@@ -56,6 +58,14 @@ public class CultivoService {
         this.sensores = sensores;
         this.tipos = tipos;
         this.alertas = alertas;
+        this.tokens = tokens;
+    }
+
+    /**
+     * Nodo recién registrado junto con su token en texto plano. El token solo
+     * existe aquí: se muestra una vez al administrador y no se puede recuperar.
+     */
+    public record NodoRegistrado(DispositivoIoT nodo, String token) {
     }
 
     /** Todos los cultivos (uso interno y pruebas; la web usa {@link #listarPara}). */
@@ -160,6 +170,16 @@ public class CultivoService {
      */
     @Transactional
     public DispositivoIoT registrarDispositivo(Integer idCultivo) {
+        return registrarNodo(idCultivo).nodo();
+    }
+
+    /**
+     * Registra un nodo con un sensor por cada tipo, lo asigna al cultivo y le
+     * genera su token (A1). Devuelve el token en texto plano para mostrarlo una
+     * sola vez.
+     */
+    @Transactional
+    public NodoRegistrado registrarNodo(Integer idCultivo) {
         Cultivo cultivo = buscar(idCultivo);
         DispositivoIoT dispositivo = dispositivos.save(new DispositivoIoT());
         for (TipoSensor tipo : tipos.findAll()) {
@@ -169,8 +189,9 @@ public class CultivoService {
             sensores.save(sensor);
         }
         cultivo.getDispositivos().add(dispositivo);
+        String token = tokens.asignarToken(dispositivo);
         log.info("Nodo {} registrado en el cultivo {}", dispositivo.getIdDispositivo(), idCultivo);
-        return dispositivo;
+        return new NodoRegistrado(dispositivo, token);
     }
 
     private void invalidarCacheUmbrales(Cultivo cultivo) {

@@ -8,6 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "dispositivo_iot")
@@ -23,6 +24,14 @@ public class DispositivoIoT {
 
     @Column(name = "fecha_instalacion")
     private LocalDate fechaInstalacion;
+
+    /** Hash BCrypt del token del nodo; el token en texto plano nunca se guarda. */
+    @Column(name = "token_hash", length = 100)
+    private String tokenHash;
+
+    /** Última vez que el nodo envió lecturas a la API. */
+    @Column(name = "ultima_conexion")
+    private LocalDateTime ultimaConexion;
 
     @PrePersist
     protected void prePersist() {
@@ -40,6 +49,14 @@ public class DispositivoIoT {
 
     public void marcarInactivo() {
         this.estado = "inactivo";
+    }
+
+    public boolean tieneToken() {
+        return tokenHash != null && !tokenHash.isBlank();
+    }
+
+    public void registrarConexion(LocalDateTime momento) {
+        this.ultimaConexion = momento;
     }
 
     public Integer getIdDispositivo() {
@@ -64,5 +81,21 @@ public class DispositivoIoT {
 
     public void setFechaInstalacion(LocalDate fechaInstalacion) {
         this.fechaInstalacion = fechaInstalacion;
+    }
+
+    public String getTokenHash() {
+        return tokenHash;
+    }
+
+    public void setTokenHash(String tokenHash) {
+        this.tokenHash = tokenHash;
+    }
+
+    public LocalDateTime getUltimaConexion() {
+        return ultimaConexion;
+    }
+
+    public void setUltimaConexion(LocalDateTime ultimaConexion) {
+        this.ultimaConexion = ultimaConexion;
     }
 }

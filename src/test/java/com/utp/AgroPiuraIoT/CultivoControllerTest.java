@@ -170,7 +170,7 @@ class CultivoControllerTest {
                         .with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/cultivos/" + cultivo.getIdCultivo()))
-                .andExpect(flash().attributeExists("mensaje"));
+                .andExpect(flash().attributeExists("mensaje", "tokenNodo", "tokenNodoId"));
     }
 
     @Test

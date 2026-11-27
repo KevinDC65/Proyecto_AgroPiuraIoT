@@ -6,6 +6,31 @@ el estado actual sin leer todo el código.
 
 ---
 
+## 25/11/2026 · A1 · Base de la telemetría IoT (#1)
+
+Prepara todo lo necesario para que un nodo ESP32 real envíe lecturas de forma segura y con
+datos válidos. La ruta `/api/telemetria` sigue cerrada hasta A2.
+
+- **Contrato de la API** en `docs/12-api-de-lecturas.md`: JSON con `idNodo` y lista de
+  `{tipoSensor, valor}`, `fechaHora` opcional, respuestas `ok` / `parcial` / `rechazado`
+  y códigos 200, 400, 401 y 404. `idNodo` se acepta como alias de `idDispositivo`.
+- **Token por nodo:** al registrar un nodo se genera un token aleatorio (`SecureRandom`,
+  256 bits), se guarda solo su hash BCrypt y se muestra **una vez** en el detalle del
+  cultivo. `NodoTokenService.verificar(idNodo, token)` queda listo para A2. El token nunca
+  se escribe en logs.
+- **Validación física** (`model/RangoFisico`): humedad 0–100 %, pH 0–14, temperatura −10 a
+  60 °C. Una lectura imposible no se guarda ni genera alertas, queda en el log como posible
+  falla de sensor y se informa en la respuesta. Disponible para B1.
+- **Última conexión:** `dispositivo_iot.ultima_conexion` se actualiza cada vez que el nodo
+  envía lecturas.
+- **BD:** migración `database/migraciones/2026-11-25_A1_token_y_conexion_nodo.sql`
+  (columnas `token_hash` y `ultima_conexion`), aplicada también en `esquema.sql` y en
+  `DispositivoIoT`. **Una BD existente debe ejecutar la migración** o la app no arranca.
+- **Pruebas:** `NodoTokenServiceTest`, `TelemetriaServiceTest` y `RangoFisicoTest` (18 nuevas);
+  `CultivoControllerTest` comprueba que el token llega en el aviso. Total: 138 (126 activas).
+
+---
+
 ## 17/11/2026 · Integración de los cambios del 12/11/2026
 
 Se integraron los commits `71e0ef2` (ajustes de interfaz) y `e555019` (API de telemetría y

@@ -278,6 +278,19 @@ button, a, [role="button"], summary, label { touch-action: manipulation; }
 .aviso.ok { background: var(--ok-fondo); border-color: #b9d3b6; color: #1f4a2b; }
 .aviso.error { background: var(--alerta-fondo); border-color: #eab3a8; color: #7d1a11; }
 .aviso.info { background: var(--papel); border-color: var(--linea); color: var(--tinta-2); }
+.token-nodo > div { min-width: 0; }
+.token-nodo p { margin: 4px 0 8px; }
+.token-valor {
+    display: block;
+    padding: 8px 10px;
+    border: 1px solid var(--linea);
+    border-radius: var(--r);
+    background: #fff;
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    font-size: 0.95rem;
+    overflow-wrap: anywhere;
+    user-select: all;
+}
 
 /* ---------- formularios ---------- */
 .form { display: grid; gap: 1rem; }

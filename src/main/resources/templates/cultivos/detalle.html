@@ -38,6 +38,15 @@
             <svg th:replace="~{components/icons :: icono('alerta')}"></svg><span th:text="${error}"></span></p>
         <p class="aviso ok" role="status" th:if="${mensaje}">
             <svg th:replace="~{components/icons :: icono('check-circulo')}"></svg><span th:text="${mensaje}"></span></p>
+        <div class="aviso info token-nodo" role="status" th:if="${tokenNodo}">
+            <svg th:replace="~{components/icons :: icono('nodo')}"></svg>
+            <div>
+                <strong th:text="'Token del nodo #' + ${tokenNodoId}">Token del nodo #3</strong>
+                <p>Cópialo ahora y configúralo en el ESP32. Por seguridad <strong>no se volverá a mostrar</strong>;
+                    si se pierde habrá que generar uno nuevo.</p>
+                <code class="token-valor" th:text="${tokenNodo}">x8Jk...</code>
+            </div>
+        </div>
 
         <div class="rejilla principal-lateral">
             <section class="panel" aria-labelledby="t-nodos">

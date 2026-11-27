@@ -1,6 +1,7 @@
 package com.utp.AgroPiuraIoT.service;
 
 import com.utp.AgroPiuraIoT.exception.RecursoNoEncontradoException;
+import com.utp.AgroPiuraIoT.model.RangoFisico;
 import com.utp.AgroPiuraIoT.model.dto.LecturaItemRequest;
 import com.utp.AgroPiuraIoT.model.dto.TelemetriaRequest;
 import com.utp.AgroPiuraIoT.model.dto.TelemetriaResponse;
@@ -11,7 +12,11 @@ import com.utp.AgroPiuraIoT.model.entity.Sensor;
 import com.utp.AgroPiuraIoT.repository.DispositivoIoTRepository;
 import com.utp.AgroPiuraIoT.repository.LecturaRepository;
 import com.utp.AgroPiuraIoT.repository.SensorRepository;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,6 +56,8 @@ public class TelemetriaService {
 
         int lecturasProcesadas = 0;
         int alertasGeneradas = 0;
+        List<String> rechazos = new ArrayList<>();
+        Map<Integer, DispositivoIoT> nodosQueReportaron = new LinkedHashMap<>();
 
         for (LecturaItemRequest item : items) {
             if (item.getValor() == null) {
@@ -58,6 +65,19 @@ public class TelemetriaService {
             }
 
             Sensor sensor = resolverSensor(item);
+            DispositivoIoT nodo = sensor.getDispositivo();
+            nodosQueReportaron.putIfAbsent(nodo.getIdDispositivo(), nodo);
+
+            String tipo = sensor.getTipoSensor().getNombreTipo();
+            if (!RangoFisico.esPosible(tipo, item.getValor())) {
+                String motivo = String.format("%s = %s fuera del rango físico (%s): posible falla de sensor",
+                        tipo, item.getValor().toPlainString(),
+                        RangoFisico.de(tipo).map(RangoFisico::describir).orElse("?"));
+                log.warn("Lectura rechazada del nodo {}, sensor {}: {}",
+                        nodo.getIdDispositivo(), sensor.getIdSensor(), motivo);
+                rechazos.add(motivo);
+                continue;
+            }
 
             Lectura lectura = sensor.registrarLectura(item.getValor());
             if (item.getFechaHora() != null) {
@@ -72,8 +92,18 @@ public class TelemetriaService {
             }
         }
 
-        log.info("Telemetría procesada: {} lecturas guardadas, {} alertas generadas",
-                lecturasProcesadas, alertasGeneradas);
+        // El nodo se comunicó aunque alguna lectura se haya rechazado: cuenta como conexión.
+        LocalDateTime ahora = LocalDateTime.now();
+        for (DispositivoIoT nodo : nodosQueReportaron.values()) {
+            nodo.registrarConexion(ahora);
+            dispositivos.save(nodo);
+        }
+
+        log.info("Telemetría procesada: {} lecturas guardadas, {} rechazadas, {} alertas generadas",
+                lecturasProcesadas, rechazos.size(), alertasGeneradas);
+        if (!rechazos.isEmpty()) {
+            return TelemetriaResponse.conRechazos(lecturasProcesadas, alertasGeneradas, rechazos);
+        }
         return TelemetriaResponse.ok(lecturasProcesadas, alertasGeneradas);
     }
 

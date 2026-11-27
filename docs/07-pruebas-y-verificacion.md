@@ -7,8 +7,8 @@
 .\mvnw.cmd test -Dtest=CultivoServiceTest    # una clase
 ```
 
-**120 pruebas** en `src/test/java/com/utp/AgroPiuraIoT/` (108 activas y 12 de telemetría
-desactivadas hasta el issue A2). Usan la BD local configurada;
+**138 pruebas** en `src/test/java/com/utp/AgroPiuraIoT/` (126 activas y 12 de telemetría
+desactivadas hasta el issue A2). `RangoFisicoTest` es unitaria y no necesita BD. Usan la BD local configurada;
 cada prueba está anotada con `@Transactional` y se revierte al terminar, así que no deja
 datos. Requieren PostgreSQL encendido con el esquema creado.
 
@@ -26,10 +26,13 @@ datos. Requieren PostgreSQL encendido con el esquema creado.
 | `DataSeederTest` | 2 | Los usuarios demo existen y autentican con su rol |
 | `AgroPiuraIoTApplicationTests` | 1 | El contexto de Spring arranca |
 | `ViewControllerTest` | 14 | Cada pantalla renderiza su plantilla con el modelo esperado |
-| `CultivoControllerTest` | 12 | Formularios de cultivo, mensajes, nodos y exportación |
+| `CultivoControllerTest` | 12 | Formularios de cultivo, mensajes, nodos (con el token mostrado una vez) y exportación |
 | `SecurityControllerTest` | 8 | Rutas públicas y protegidas, login, logout, registro y API de telemetría cerrada |
 | `UmbralControllerTest` | 6 | Lista, guardado, errores y eliminación de umbrales |
 | `AppUserDetailsServiceTest` | 6 | Carga de usuarios para el login y sus roles |
+| `NodoTokenServiceTest` | 6 | A1: el registro de un nodo genera token de 43 caracteres y guarda solo el hash BCrypt; token incorrecto, de otro nodo, vacío o de nodo inexistente no valida; nodo sin token; regenerar invalida el anterior; el token nunca aparece en los logs |
+| `TelemetriaServiceTest` | 6 | A1: lectura válida se guarda y actualiza `ultima_conexion`; límites físicos válidos; lectura imposible se rechaza, no se guarda y queda en el log; lote mixto; tipo de sensor que el nodo no tiene; nodo inexistente |
+| `RangoFisicoTest` | 6 | A1: rangos físicos por tipo de sensor, límites inclusivos, tipos desconocidos (unitaria, sin BD) |
 | `TelemetriaControllerTest` | 12 | API de telemetría. **Desactivada** (`@Disabled`) hasta autenticar nodos con token (issue A2) |
 
 ### Escribir pruebas nuevas
