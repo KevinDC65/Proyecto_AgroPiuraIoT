@@ -36,7 +36,12 @@
                 <li class="notificacion" th:each="n : ${notificaciones}">
                     <span class="notificacion-icono"><svg th:replace="~{components/icons :: icono('alerta')}"></svg></span>
                     <div>
-                        <strong th:text="${n.alerta.umbral.cultivo.nombre}">Mango · Parcela A</strong>
+                        <div class="estado-grupo">
+                            <strong th:text="${n.alerta.umbral.cultivo.nombre}">Mango · Parcela A</strong>
+                            <span class="estado severidad-critica" th:if="${n.alerta.severidad == 'critica'}">Crítica</span>
+                            <span class="estado severidad-moderada" th:if="${n.alerta.severidad == 'moderada'}">Moderada</span>
+                            <span class="estado severidad-leve" th:if="${n.alerta.severidad == null or n.alerta.severidad == 'leve'}">Leve</span>
+                        </div>
                         <p th:text="${n.alerta.mensaje}">Humedad de suelo 28 % por debajo del mínimo 35 %</p>
                     </div>
                     <form th:action="@{/alertas/{id}/leida(id=${n.idNotificacion})}" method="post">
@@ -51,7 +56,7 @@
             <div class="panel-cabeza">
                 <div>
                     <h2 id="t-hist">Historial de alertas</h2>
-                    <p>Una alerta queda pendiente hasta que alguien la marca como atendida</p>
+                    <p>Las lecturas consecutivas fuera de rango se agrupan en un solo episodio hasta volver al rango</p>
                 </div>
             </div>
             <div class="vacio" th:if="${#lists.isEmpty(alertas)}">
@@ -63,23 +68,76 @@
             <div class="tabla-marco" th:unless="${#lists.isEmpty(alertas)}">
                 <table class="tabla apilable">
                     <thead>
-                    <tr><th>Fecha</th><th>Cultivo</th><th>Variable</th><th>Mensaje</th><th>Estado</th><th><span class="solo-lector">Acción</span></th></tr>
+                    <tr><th>Inicio</th><th>Cultivo</th><th>Variable</th><th>Severidad</th><th>Episodio</th><th>Estado</th><th><span class="solo-lector">Acción</span></th></tr>
                     </thead>
                     <tbody>
-                    <tr th:each="a : ${alertas}" th:classappend="${!a.atendida} ? 'pendiente'">
-                        <td data-etiqueta="Fecha" class="num" th:text="${a.fechaAlerta != null} ? ${#temporals.format(a.fechaAlerta, 'dd/MM/yyyy HH:mm')} : '—'">17/11/2026 08:40</td>
+                    <tr th:each="a : ${alertas}" th:classappend="${a.estado == 'abierta'} ? 'pendiente'">
+                        <td data-etiqueta="Inicio" class="num" th:text="${a.fechaAlerta != null} ? ${#temporals.format(a.fechaAlerta, 'dd/MM/yyyy HH:mm')} : '—'">17/11/2026 08:40</td>
                         <td data-etiqueta="Cultivo">
                             <a class="celda-principal" th:href="@{/cultivos/{id}/umbrales(id=${a.umbral.cultivo.idCultivo})}"
                                th:text="${a.umbral.cultivo.nombre}">Mango</a></td>
                         <td data-etiqueta="Variable" th:text="${#strings.capitalize(#strings.replace(a.umbral.tipoSensor.obtenerNombre(), '_', ' '))}">Humedad de suelo</td>
-                        <td data-etiqueta="Mensaje" class="mensaje-celda" th:text="${a.mensaje}">Lectura fuera de rango</td>
+                        <td data-etiqueta="Severidad">
+                            <span class="estado severidad-critica" th:if="${a.severidad == 'critica'}">Crítica</span>
+                            <span class="estado severidad-moderada" th:if="${a.severidad == 'moderada'}">Moderada</span>
+                            <span class="estado severidad-leve" th:if="${a.severidad == null or a.severidad == 'leve'}">Leve</span>
+                        </td>
+                        <td data-etiqueta="Episodio" class="mensaje-celda">
+                            <span th:text="${a.mensaje}">Lectura fuera de rango</span>
+                            <span class="estado-nota" th:if="${a.fechaCierre != null}"
+                                  th:text="'Cerrada el ' + ${#temporals.format(a.fechaCierre, 'dd/MM/yyyy HH:mm')}">Cerrada el 17/11/2026 10:15</span>
+                        </td>
                         <td data-etiqueta="Estado">
-                            <span class="estado alerta" th:if="${!a.atendida}">Pendiente</span>
-                            <span class="estado ok" th:if="${a.atendida}">Atendida</span>
+                            <span class="estado alerta" th:if="${a.estado == 'abierta'}">Abierta</span>
+                            <span class="estado ok" th:if="${a.estado != 'abierta'}">Cerrada</span>
+                            <span class="estado-nota" th:text="${a.atendida} ? 'Atendida' : 'Sin atender'">Sin atender</span>
                         </td>
                         <td class="td-acciones">
                             <div class="celda-acciones">
                                 <form th:if="${!a.atendida}" th:action="@{/alertas/{id}/atender(id=${a.idAlerta})}" method="post">
+                                    <button class="btn secundario chico" type="submit">
+                                        <svg th:replace="~{components/icons :: icono('check')}"></svg> Marcar atendida</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="panel" aria-labelledby="t-nodos-alerta" th:unless="${#lists.isEmpty(alertasNodos)}">
+            <div class="panel-cabeza">
+                <div>
+                    <h2 id="t-nodos-alerta">Alertas de nodos sin conexión</h2>
+                    <p>Nodos activos que superaron el tiempo máximo sin enviar lecturas</p>
+                </div>
+            </div>
+            <div class="tabla-marco">
+                <table class="tabla apilable">
+                    <thead>
+                    <tr><th>Detectada</th><th>Cultivo</th><th>Nodo</th><th>Detalle</th><th>Estado</th><th><span class="solo-lector">Acción</span></th></tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="an : ${alertasNodos}" th:classappend="${an.estado == 'abierta'} ? 'pendiente'">
+                        <td data-etiqueta="Detectada" class="num" th:text="${#temporals.format(an.fechaAlerta, 'dd/MM/yyyy HH:mm')}">24/11/2026 12:00</td>
+                        <td data-etiqueta="Cultivo">
+                            <a class="celda-principal" th:href="@{/cultivos/{id}(id=${an.cultivo.idCultivo})}"
+                               th:text="${an.cultivo.nombre}">Mango</a></td>
+                        <td data-etiqueta="Nodo" th:text="'Nodo #' + ${an.dispositivo.idDispositivo}">Nodo #1</td>
+                        <td data-etiqueta="Detalle" class="mensaje-celda">
+                            <span th:text="${an.mensaje}">Nodo sin reportar lecturas</span>
+                            <span class="estado-nota" th:if="${an.fechaCierre != null}"
+                                  th:text="'Reconectado el ' + ${#temporals.format(an.fechaCierre, 'dd/MM/yyyy HH:mm')}">Reconectado</span>
+                        </td>
+                        <td data-etiqueta="Estado">
+                            <span class="estado alerta" th:if="${an.estado == 'abierta'}">Sin conexión</span>
+                            <span class="estado ok" th:if="${an.estado != 'abierta'}">Cerrada</span>
+                            <span class="estado-nota" th:text="${an.atendida} ? 'Atendida' : 'Sin atender'">Sin atender</span>
+                        </td>
+                        <td class="td-acciones">
+                            <div class="celda-acciones">
+                                <form th:if="${!an.atendida}" th:action="@{/alertas/nodos/{id}/atender(id=${an.idAlertaNodo})}" method="post">
                                     <button class="btn secundario chico" type="submit">
                                         <svg th:replace="~{components/icons :: icono('check')}"></svg> Marcar atendida</button>
                                 </form>

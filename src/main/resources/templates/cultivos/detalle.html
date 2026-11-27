@@ -42,8 +42,8 @@
             <svg th:replace="~{components/icons :: icono('nodo')}"></svg>
             <div>
                 <strong th:text="'Token del nodo #' + ${tokenNodoId}">Token del nodo #3</strong>
-                <p>Cópialo ahora y configúralo en el ESP32. Por seguridad <strong>no se volverá a mostrar</strong>;
-                    si se pierde habrá que generar uno nuevo.</p>
+                <p>Cópialo ahora y configúralo en el ESP32 o cliente IoT. Por seguridad <strong>no se volverá a mostrar</strong>;
+                    si se pierde habrá que regenerar uno nuevo.</p>
                 <code class="token-valor" th:text="${tokenNodo}">x8Jk...</code>
             </div>
         </div>
@@ -68,14 +68,44 @@
                 </div>
                 <div class="tabla-marco" th:unless="${#sets.isEmpty(cultivo.dispositivos)}">
                     <table class="tabla apilable">
-                        <thead><tr><th>Nodo</th><th>Estado</th><th>Instalación</th></tr></thead>
+                        <thead>
+                        <tr>
+                            <th>Nodo</th>
+                            <th>Conexión</th>
+                            <th>Última conexión</th>
+                            <th th:if="${puedeAdministrar}"><span class="solo-lector">Acciones</span></th>
+                        </tr>
+                        </thead>
                         <tbody>
-                        <tr th:each="d : ${cultivo.dispositivos}">
-                            <td class="td-titulo"><span class="celda-principal" th:text="'Nodo #' + ${d.idDispositivo}">Nodo #3</span></td>
-                            <td data-etiqueta="Estado">
-                                <span class="estado ok" th:if="${d.estaActivo()}">Activo</span>
-                                <span class="estado sin-datos" th:unless="${d.estaActivo()}">Inactivo</span></td>
-                            <td data-etiqueta="Instalación" class="num" th:text="${d.fechaInstalacion} ?: '—'">2026-10-01</td>
+                        <tr th:each="d : ${cultivo.dispositivos}"
+                            th:with="conn=${estadosNodos != null ? estadosNodos[d.idDispositivo] : (d.estaActivo() ? 'SIN_CONEXION' : 'INACTIVO')}">
+                            <td class="td-titulo">
+                                <span class="celda-principal" th:text="'Nodo #' + ${d.idDispositivo}">Nodo #3</span>
+                                <span class="estado-nota" th:text="'Instalado: ' + (${d.fechaInstalacion} ?: '—')">Instalado: 2026-10-01</span>
+                            </td>
+                            <td data-etiqueta="Conexión">
+                                <span class="estado ok" th:if="${conn == 'EN_LINEA'}">En línea</span>
+                                <span class="estado alerta" th:if="${conn == 'SIN_CONEXION'}">Sin conexión</span>
+                                <span class="estado sin-datos" th:if="${conn == 'INACTIVO'}">Inactivo</span>
+                            </td>
+                            <td data-etiqueta="Última conexión" class="num"
+                                th:text="${d.ultimaConexion != null} ? ${#temporals.format(d.ultimaConexion, 'dd/MM/yyyy HH:mm')} : 'Sin reportes'">Sin reportes</td>
+                            <td class="td-acciones" th:if="${puedeAdministrar}">
+                                <div class="celda-acciones">
+                                    <form th:action="@{/cultivos/{id}/dispositivos/{idD}/estado(id=${cultivo.idCultivo}, idD=${d.idDispositivo})}"
+                                          method="post" class="inline">
+                                        <input type="hidden" name="activar" th:value="${!d.estaActivo()}">
+                                        <button class="btn secundario chico" type="submit"
+                                                th:text="${d.estaActivo()} ? 'Desactivar' : 'Activar'">Desactivar</button>
+                                    </form>
+                                    <form th:action="@{/cultivos/{id}/dispositivos/{idD}/token(id=${cultivo.idCultivo}, idD=${d.idDispositivo})}"
+                                          method="post" class="inline"
+                                          th:attr="data-confirmar='¿Regenerar el token del Nodo #' + ${d.idDispositivo} + '? El token anterior dejará de funcionar de inmediato.'">
+                                        <button class="btn secundario chico" type="submit">
+                                            <svg th:replace="~{components/icons :: icono('refrescar')}"></svg> Regenerar token</button>
+                                    </form>
+                                </div>
+                            </td>
                         </tr>
                         </tbody>
                     </table>

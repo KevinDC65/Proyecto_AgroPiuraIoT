@@ -56,7 +56,7 @@
                     <svg th:replace="~{components/icons :: icono('campana')}"></svg> Alertas
                     <span class="nav-contador" th:if="${notificacionesPendientes != null and notificacionesPendientes > 0}"
                           th:text="${notificacionesPendientes}"
-                          th:attr="aria-label=${notificacionesPendientes} + ' sin leer'"></span>
+                          th:attr="aria-label=${notificacionesPendientes} + ' episodios abiertos'"></span>
                 </a>
                 <a class="nav-item" th:classappend="${activo} == 'mapa' ? ' activo'"
                    th:attr="aria-current=${activo} == 'mapa' ? 'page' : null" th:href="@{/mapa}">

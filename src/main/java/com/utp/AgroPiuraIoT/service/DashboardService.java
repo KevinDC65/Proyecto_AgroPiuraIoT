@@ -2,6 +2,7 @@ package com.utp.AgroPiuraIoT.service;
 
 import com.utp.AgroPiuraIoT.model.dto.DashboardResumen;
 import com.utp.AgroPiuraIoT.model.dto.DashboardResumen.CultivoEstado;
+import com.utp.AgroPiuraIoT.model.entity.Alerta;
 import com.utp.AgroPiuraIoT.model.entity.Cultivo;
 import com.utp.AgroPiuraIoT.model.entity.DispositivoIoT;
 import com.utp.AgroPiuraIoT.model.entity.Lectura;
@@ -15,11 +16,13 @@ import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Resumen del dashboard y del mapa (RF-04), limitado a los cultivos del usuario. */
+/** Resumen del dashboard y del mapa (RF-04, B1, A2), limitado a los cultivos del usuario. */
 @Service
 public class DashboardService {
 
@@ -30,13 +33,16 @@ public class DashboardService {
     private final SensorRepository sensores;
     private final LecturaRepository lecturas;
     private final AlertaRepository alertas;
+    private final NodoService nodos;
 
     public DashboardService(CultivoRepository cultivos, SensorRepository sensores,
-                            LecturaRepository lecturas, AlertaRepository alertas) {
+                            LecturaRepository lecturas, AlertaRepository alertas,
+                            NodoService nodos) {
         this.cultivos = cultivos;
         this.sensores = sensores;
         this.lecturas = lecturas;
         this.alertas = alertas;
+        this.nodos = nodos;
     }
 
     @Transactional(readOnly = true)
@@ -46,6 +52,10 @@ public class DashboardService {
         List<BigDecimal> humedades = new ArrayList<>();
         List<BigDecimal> temperaturas = new ArrayList<>();
         LocalDateTime ultimaFecha = null;
+        LocalDateTime ahora = LocalDateTime.now();
+
+        Set<Integer> nodosUnicos = new HashSet<>();
+        Set<Integer> nodosUnicosEnLinea = new HashSet<>();
 
         for (Cultivo cultivo : visibles) {
             UltimasLecturas ultimas = ultimasLecturas(cultivo);
@@ -58,9 +68,36 @@ public class DashboardService {
             String estado = "SIN_DATOS";
             if (ultimas.humedad() != null || ultimas.temperatura() != null) {
                 boolean conAlertas = alertas
-                        .countByUmbralCultivoIdCultivoAndAtendidaFalse(cultivo.getIdCultivo()) > 0;
+                        .countByUmbralCultivoIdCultivoAndEstado(
+                                cultivo.getIdCultivo(), Alerta.ESTADO_ABIERTA) > 0;
                 estado = conAlertas ? "ALERTA" : "NORMAL";
             }
+
+            int totalCultivo = cultivo.getDispositivos().size();
+            int enLineaCultivo = 0;
+            int activosCultivo = 0;
+            for (DispositivoIoT d : cultivo.getDispositivos()) {
+                nodosUnicos.add(d.getIdDispositivo());
+                if (d.estaActivo()) {
+                    activosCultivo++;
+                }
+                if (nodos.estaEnLinea(d, ahora)) {
+                    enLineaCultivo++;
+                    nodosUnicosEnLinea.add(d.getIdDispositivo());
+                }
+            }
+
+            String estadoConexion;
+            if (totalCultivo == 0) {
+                estadoConexion = "SIN_NODOS";
+            } else if (activosCultivo == 0) {
+                estadoConexion = DispositivoIoT.CONEXION_INACTIVO;
+            } else if (enLineaCultivo > 0) {
+                estadoConexion = DispositivoIoT.CONEXION_EN_LINEA;
+            } else {
+                estadoConexion = DispositivoIoT.CONEXION_SIN_CONEXION;
+            }
+
             estados.add(new CultivoEstado(
                     cultivo.getIdCultivo(),
                     cultivo.getNombre(),
@@ -68,15 +105,24 @@ public class DashboardService {
                     ultimas.temperatura() == null ? null : ultimas.temperatura().getValor(),
                     estado,
                     cultivo.getLatitud(),
-                    cultivo.getLongitud()));
+                    cultivo.getLongitud(),
+                    estadoConexion,
+                    enLineaCultivo,
+                    totalCultivo));
             if (ultimas.fecha() != null && (ultimaFecha == null || ultimas.fecha().isAfter(ultimaFecha))) {
                 ultimaFecha = ultimas.fecha();
             }
         }
 
-        return new DashboardResumen(visibles.size(), alertas.contarActivasPorUsuario(correo),
-                promedio(humedades), promedio(temperaturas),
-                textoSincronizacion(ultimaFecha), estados);
+        return new DashboardResumen(
+                visibles.size(),
+                alertas.contarActivasPorUsuario(correo),
+                promedio(humedades),
+                promedio(temperaturas),
+                textoSincronizacion(ultimaFecha),
+                nodosUnicosEnLinea.size(),
+                nodosUnicos.size(),
+                estados);
     }
 
     /**

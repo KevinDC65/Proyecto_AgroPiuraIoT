@@ -23,6 +23,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Ingesta de telemetría IoT (A1/A2): valida que el payload corresponda al nodo
+ * autenticado, descarta lecturas físicamente imposibles ({@link RangoFisico})
+ * reportándolas en {@code rechazos}, evalúa cada lectura válida mediante
+ * {@link AlertasService#evaluar(Lectura)}, y actualiza {@code ultima_conexion}
+ * cerrando alertas abiertas de desconexión.
+ */
 @Service
 public class TelemetriaService {
 
@@ -32,21 +39,41 @@ public class TelemetriaService {
     private final SensorRepository sensores;
     private final LecturaRepository lecturas;
     private final AlertasService alertas;
+    private final NodoService nodoService;
 
     public TelemetriaService(DispositivoIoTRepository dispositivos,
                              SensorRepository sensores,
                              LecturaRepository lecturas,
-                             AlertasService alertas) {
+                             AlertasService alertas,
+                             NodoService nodoService) {
         this.dispositivos = dispositivos;
         this.sensores = sensores;
         this.lecturas = lecturas;
         this.alertas = alertas;
+        this.nodoService = nodoService;
     }
 
+    /** Procesamiento directo a nivel de servicio (A1 y pruebas internas). */
     @Transactional
     public TelemetriaResponse procesar(TelemetriaRequest request) {
+        return procesar(request, null);
+    }
+
+    /** Procesamiento autenticado por token Bearer de nodo (A2). */
+    @Transactional
+    public TelemetriaResponse procesar(TelemetriaRequest request, Integer idDispositivoAutenticado) {
         if (request == null) {
             throw new IllegalArgumentException("La solicitud de telemetría no puede ser nula");
+        }
+
+        if (idDispositivoAutenticado != null) {
+            if (request.getIdDispositivo() != null
+                    && !request.getIdDispositivo().equals(idDispositivoAutenticado)) {
+                throw new IllegalArgumentException(String.format(
+                        "El idDispositivo %d no corresponde al nodo autenticado (%d)",
+                        request.getIdDispositivo(), idDispositivoAutenticado));
+            }
+            request.setIdDispositivo(idDispositivoAutenticado);
         }
 
         List<LecturaItemRequest> items = request.obtenerItems();
@@ -60,6 +87,16 @@ public class TelemetriaService {
         Map<Integer, DispositivoIoT> nodosQueReportaron = new LinkedHashMap<>();
 
         for (LecturaItemRequest item : items) {
+            if (idDispositivoAutenticado != null) {
+                if (item.getIdDispositivo() != null
+                        && !item.getIdDispositivo().equals(idDispositivoAutenticado)) {
+                    throw new IllegalArgumentException(String.format(
+                            "El dispositivo %d no corresponde al nodo autenticado (%d)",
+                            item.getIdDispositivo(), idDispositivoAutenticado));
+                }
+                item.setIdDispositivo(idDispositivoAutenticado);
+            }
+
             if (item.getValor() == null) {
                 throw new IllegalArgumentException("El valor de la lectura no puede ser nulo");
             }
@@ -95,8 +132,7 @@ public class TelemetriaService {
         // El nodo se comunicó aunque alguna lectura se haya rechazado: cuenta como conexión.
         LocalDateTime ahora = LocalDateTime.now();
         for (DispositivoIoT nodo : nodosQueReportaron.values()) {
-            nodo.registrarConexion(ahora);
-            dispositivos.save(nodo);
+            nodoService.registrarConexion(nodo, ahora);
         }
 
         log.info("Telemetría procesada: {} lecturas guardadas, {} rechazadas, {} alertas generadas",
@@ -113,8 +149,8 @@ public class TelemetriaService {
                     .orElseThrow(() -> new RecursoNoEncontradoException(
                             "Sensor no encontrado: " + item.getIdSensor()));
 
-            if (item.getIdDispositivo() != null &&
-                    !sensor.getDispositivo().getIdDispositivo().equals(item.getIdDispositivo())) {
+            if (item.getIdDispositivo() != null
+                    && !sensor.getDispositivo().getIdDispositivo().equals(item.getIdDispositivo())) {
                 throw new IllegalArgumentException(String.format(
                         "El sensor %d no pertenece al dispositivo %d",
                         item.getIdSensor(), item.getIdDispositivo()));

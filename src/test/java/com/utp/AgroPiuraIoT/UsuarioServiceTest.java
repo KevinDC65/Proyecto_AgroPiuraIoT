@@ -71,6 +71,19 @@ class UsuarioServiceTest {
     }
 
     @Test
+    void rechazaContrasenaDebil() {
+        // Solo números
+        assertThrows(ReglaNegocioException.class, () -> usuarios.registrar(
+                new RegistroRequest("Pedro", "pedro1@agropiura.pe", "12345678", "12345678")));
+        // Solo letras
+        assertThrows(ReglaNegocioException.class, () -> usuarios.registrar(
+                new RegistroRequest("Pedro", "pedro2@agropiura.pe", "sololetras", "sololetras")));
+        // Menos de 8 caracteres
+        assertThrows(ReglaNegocioException.class, () -> usuarios.registrar(
+                new RegistroRequest("Pedro", "pedro3@agropiura.pe", "abc123", "abc123")));
+    }
+
+    @Test
     void buscarPorCorreo() {
         usuarios.registrar(new RegistroRequest("Rosa", "rosa@agropiura.pe", "secreta123", "secreta123"));
         Usuario encontrado = usuarios.buscarPorCorreo("ROSA@agropiura.pe");

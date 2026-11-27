@@ -1,7 +1,7 @@
 -- =====================================================================
 -- AgroPiura IoT - Esquema completo de la base de datos (PostgreSQL 15+)
 --
--- Crea las 13 tablas, secuencias, claves primarias y foráneas, y los
+-- Crea las 15 tablas, secuencias, claves primarias y foráneas, y los
 -- índices/restricciones de database/indices.sql. Pensado para una BD vacía:
 --
 --   createdb -h localhost -U postgres agropiura
@@ -39,7 +39,13 @@ CREATE TABLE public.alertas (
     id_umbral integer NOT NULL,
     mensaje character varying(255),
     fecha_alerta timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    atendida boolean DEFAULT false NOT NULL
+    atendida boolean DEFAULT false NOT NULL,
+    estado character varying(20) DEFAULT 'abierta'::character varying NOT NULL,
+    severidad character varying(20) DEFAULT 'leve'::character varying NOT NULL,
+    direccion character varying(10) DEFAULT 'bajo'::character varying NOT NULL,
+    valor_extremo numeric(10,2),
+    cantidad_lecturas integer DEFAULT 1 NOT NULL,
+    fecha_cierre timestamp without time zone
 );
 
 
@@ -61,6 +67,79 @@ CREATE SEQUENCE public.alertas_id_alerta_seq
 --
 
 ALTER SEQUENCE public.alertas_id_alerta_seq OWNED BY public.alertas.id_alerta;
+
+
+--
+-- Name: alerta_nodo; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.alerta_nodo (
+    id_alerta_nodo integer NOT NULL,
+    id_dispositivo integer NOT NULL,
+    id_cultivo integer NOT NULL,
+    tipo character varying(40) DEFAULT 'nodo_sin_conexion'::character varying NOT NULL,
+    estado character varying(20) DEFAULT 'abierta'::character varying NOT NULL,
+    severidad character varying(20) DEFAULT 'moderada'::character varying NOT NULL,
+    mensaje character varying(255),
+    fecha_alerta timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    fecha_cierre timestamp without time zone,
+    atendida boolean DEFAULT false NOT NULL
+);
+
+
+--
+-- Name: alerta_nodo_id_alerta_nodo_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.alerta_nodo_id_alerta_nodo_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: alerta_nodo_id_alerta_nodo_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.alerta_nodo_id_alerta_nodo_seq OWNED BY public.alerta_nodo.id_alerta_nodo;
+
+
+--
+-- Name: auditoria; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.auditoria (
+    id integer NOT NULL,
+    id_usuario integer,
+    accion character varying(80) NOT NULL,
+    entidad character varying(80) NOT NULL,
+    id_entidad integer,
+    detalle character varying(500),
+    fecha timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+--
+-- Name: auditoria_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.auditoria_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: auditoria_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.auditoria_id_seq OWNED BY public.auditoria.id;
 
 
 --
@@ -430,7 +509,9 @@ CREATE TABLE public.usuarios (
     correo character varying(150) NOT NULL,
     contrasena character varying(255) NOT NULL,
     estado character varying(50) DEFAULT 'activo'::character varying NOT NULL,
-    fecha_registro date DEFAULT CURRENT_DATE NOT NULL
+    fecha_registro date DEFAULT CURRENT_DATE NOT NULL,
+    intentos_fallidos integer DEFAULT 0 NOT NULL,
+    bloqueado_hasta timestamp without time zone
 );
 
 
@@ -459,6 +540,20 @@ ALTER SEQUENCE public.usuarios_id_usuario_seq OWNED BY public.usuarios.id_usuari
 --
 
 ALTER TABLE ONLY public.alertas ALTER COLUMN id_alerta SET DEFAULT nextval('public.alertas_id_alerta_seq'::regclass);
+
+
+--
+-- Name: alerta_nodo id_alerta_nodo; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.alerta_nodo ALTER COLUMN id_alerta_nodo SET DEFAULT nextval('public.alerta_nodo_id_alerta_nodo_seq'::regclass);
+
+
+--
+-- Name: auditoria id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.auditoria ALTER COLUMN id SET DEFAULT nextval('public.auditoria_id_seq'::regclass);
 
 
 --
@@ -551,6 +646,22 @@ ALTER TABLE ONLY public.usuarios ALTER COLUMN id_usuario SET DEFAULT nextval('pu
 
 ALTER TABLE ONLY public.alertas
     ADD CONSTRAINT alertas_pkey PRIMARY KEY (id_alerta);
+
+
+--
+-- Name: alerta_nodo alerta_nodo_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.alerta_nodo
+    ADD CONSTRAINT alerta_nodo_pkey PRIMARY KEY (id_alerta_nodo);
+
+
+--
+-- Name: auditoria auditoria_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.auditoria
+    ADD CONSTRAINT auditoria_pkey PRIMARY KEY (id);
 
 
 --
@@ -687,6 +798,48 @@ CREATE INDEX idx_alertas_umbral_atendida ON public.alertas USING btree (id_umbra
 
 
 --
+-- Name: idx_alertas_umbral_estado; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_alertas_umbral_estado ON public.alertas USING btree (id_umbral, estado);
+
+
+--
+-- Name: idx_alerta_nodo_cultivo_estado; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_alerta_nodo_cultivo_estado ON public.alerta_nodo USING btree (id_cultivo, estado);
+
+
+--
+-- Name: idx_alerta_nodo_disp_estado; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_alerta_nodo_disp_estado ON public.alerta_nodo USING btree (id_dispositivo, estado);
+
+
+--
+-- Name: idx_auditoria_entidad; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_auditoria_entidad ON public.auditoria USING btree (entidad, id_entidad);
+
+
+--
+-- Name: idx_auditoria_fecha; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_auditoria_fecha ON public.auditoria USING btree (fecha DESC);
+
+
+--
+-- Name: idx_auditoria_usuario; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_auditoria_usuario ON public.auditoria USING btree (id_usuario);
+
+
+--
 -- Name: idx_cultivo_dispositivo_dispositivo; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -798,6 +951,30 @@ ALTER TABLE ONLY public.alertas
 
 ALTER TABLE ONLY public.alertas
     ADD CONSTRAINT alertas_id_umbral_fkey FOREIGN KEY (id_umbral) REFERENCES public.umbrales(id_umbral) ON DELETE CASCADE;
+
+
+--
+-- Name: alerta_nodo alerta_nodo_id_cultivo_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.alerta_nodo
+    ADD CONSTRAINT alerta_nodo_id_cultivo_fkey FOREIGN KEY (id_cultivo) REFERENCES public.cultivo(id_cultivo) ON DELETE CASCADE;
+
+
+--
+-- Name: alerta_nodo alerta_nodo_id_dispositivo_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.alerta_nodo
+    ADD CONSTRAINT alerta_nodo_id_dispositivo_fkey FOREIGN KEY (id_dispositivo) REFERENCES public.dispositivo_iot(id_dispositivo) ON DELETE CASCADE;
+
+
+--
+-- Name: auditoria auditoria_id_usuario_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.auditoria
+    ADD CONSTRAINT auditoria_id_usuario_fkey FOREIGN KEY (id_usuario) REFERENCES public.usuarios(id_usuario) ON DELETE SET NULL;
 
 
 --

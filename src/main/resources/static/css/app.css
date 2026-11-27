@@ -262,6 +262,14 @@ button, a, [role="button"], summary, label { touch-action: manipulation; }
 .estado.sin-datos::before { background: transparent; border: 1.5px solid currentColor; }
 .estado.admin { background: var(--arcilla-velo); color: var(--arcilla-osc); }
 .estado.admin::before { border-radius: 2px; }
+.estado.severidad-leve { background: var(--neutro-fondo); color: var(--neutro); }
+.estado.severidad-leve::before { background: transparent; border: 1.5px solid currentColor; }
+.estado.severidad-moderada { background: var(--aviso-fondo); color: var(--aviso); }
+.estado.severidad-moderada::before { width: 8px; height: 8px; border-radius: 0; clip-path: polygon(50% 0%, 0% 100%, 100% 100%); }
+.estado.severidad-critica { background: var(--alerta-fondo); color: var(--alerta); }
+.estado.severidad-critica::before { border-radius: 1px; transform: rotate(45deg) scale(0.9); }
+.estado-grupo { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; }
+.estado-nota { display: block; font-size: var(--t-xs); color: var(--tinta-suave); margin-top: 0.2rem; }
 
 /* ---------- avisos (flash) ---------- */
 .aviso {

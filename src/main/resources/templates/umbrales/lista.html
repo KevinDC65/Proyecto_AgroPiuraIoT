@@ -83,13 +83,13 @@
                     <div class="fila">
                         <label class="campo" th:classappend="${#fields.hasErrors('valorMinimo')} ? ' con-error'">
                             <span>Mínimo</span>
-                            <input type="number" name="valorMinimo" step="0.01" min="0" max="1000" required inputmode="decimal"
+                            <input type="number" name="valorMinimo" step="0.01" min="-10" max="1000" required inputmode="decimal"
                                    th:value="*{valorMinimo}" placeholder="Ej. 35">
                             <span class="error" th:if="${#fields.hasErrors('valorMinimo')}" th:errors="*{valorMinimo}"></span>
                         </label>
                         <label class="campo" th:classappend="${#fields.hasErrors('valorMaximo')} ? ' con-error'">
                             <span>Máximo</span>
-                            <input type="number" name="valorMaximo" step="0.01" min="0" max="1000" required inputmode="decimal"
+                            <input type="number" name="valorMaximo" step="0.01" min="-10" max="1000" required inputmode="decimal"
                                    th:value="*{valorMaximo}" placeholder="Ej. 80">
                             <span class="error" th:if="${#fields.hasErrors('valorMaximo')}" th:errors="*{valorMaximo}"></span>
                         </label>

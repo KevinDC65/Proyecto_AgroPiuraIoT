@@ -25,7 +25,8 @@ public class TelemetriaResponse {
     }
 
     public static TelemetriaResponse ok(int lecturasProcesadas, int alertasGeneradas) {
-        return new TelemetriaResponse("ok", lecturasProcesadas, alertasGeneradas, "Telemetría procesada exitosamente");
+        return new TelemetriaResponse("ok", lecturasProcesadas, alertasGeneradas,
+                "Telemetría procesada exitosamente");
     }
 
     /**
@@ -36,10 +37,10 @@ public class TelemetriaResponse {
                                                  List<String> rechazos) {
         String status = lecturasProcesadas > 0 ? "parcial" : "rechazado";
         String mensaje = rechazos.size() + " lectura(s) rechazada(s) por valor físicamente imposible";
-        TelemetriaResponse r = new TelemetriaResponse(status, lecturasProcesadas, alertasGeneradas, mensaje);
-        r.setLecturasRechazadas(rechazos.size());
-        r.setRechazos(List.copyOf(rechazos));
-        return r;
+        TelemetriaResponse respuesta = new TelemetriaResponse(status, lecturasProcesadas, alertasGeneradas, mensaje);
+        respuesta.lecturasRechazadas = rechazos.size();
+        respuesta.rechazos = List.copyOf(rechazos);
+        return respuesta;
     }
 
     public static TelemetriaResponse error(String mensaje) {

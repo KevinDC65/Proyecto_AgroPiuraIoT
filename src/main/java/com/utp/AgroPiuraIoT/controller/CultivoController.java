@@ -5,6 +5,7 @@ import com.utp.AgroPiuraIoT.model.dto.CultivoForm;
 import com.utp.AgroPiuraIoT.model.entity.Cultivo;
 import com.utp.AgroPiuraIoT.security.PermisosCultivo;
 import com.utp.AgroPiuraIoT.service.CultivoService;
+import com.utp.AgroPiuraIoT.service.NodoService;
 import com.utp.AgroPiuraIoT.service.SimuladorService;
 import com.utp.AgroPiuraIoT.util.excel.CultivoExcelExporter;
 import jakarta.validation.Valid;
@@ -35,12 +36,14 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class CultivoController {
 
     private final CultivoService cultivos;
+    private final NodoService nodos;
     private final SimuladorService simulador;
     private final PermisosCultivo permisos;
 
-    public CultivoController(CultivoService cultivos, SimuladorService simulador,
-                             PermisosCultivo permisos) {
+    public CultivoController(CultivoService cultivos, NodoService nodos,
+                             SimuladorService simulador, PermisosCultivo permisos) {
         this.cultivos = cultivos;
+        this.nodos = nodos;
         this.simulador = simulador;
         this.permisos = permisos;
     }
@@ -77,7 +80,10 @@ public class CultivoController {
     @GetMapping("/{id:\\d+}")
     @PreAuthorize("@permisos.puedeVer(#id, authentication)")
     public String detalle(@PathVariable Integer id, Authentication auth, Model model) {
-        model.addAttribute("cultivo", cultivos.buscar(id));
+        Cultivo cultivo = cultivos.buscar(id);
+        model.addAttribute("cultivo", cultivo);
+        model.addAttribute("estadosNodos", nodos.estadosDeCultivo(cultivo));
+        model.addAttribute("minutosEnLinea", nodos.getMinutosEnLinea());
         model.addAttribute("puedeAdministrar", permisos.puedeAdministrar(id, auth));
         return "cultivos/detalle";
     }
@@ -119,12 +125,39 @@ public class CultivoController {
 
     @PostMapping("/{id:\\d+}/dispositivos/nuevo")
     @PreAuthorize("@permisos.puedeAdministrar(#id, authentication)")
-    public String registrarDispositivo(@PathVariable Integer id, RedirectAttributes flash) {
-        var registro = cultivos.registrarNodo(id);
-        flash.addFlashAttribute("mensaje", "Nodo #" + registro.nodo().getIdDispositivo() + " registrado");
+    public String registrarDispositivo(@PathVariable Integer id, Authentication auth, RedirectAttributes flash) {
+        var creado = nodos.registrarConToken(id, auth.getName());
+        flash.addFlashAttribute("mensaje", "Nodo #" + creado.dispositivo().getIdDispositivo() + " registrado");
         // El token solo viaja en este flash: se muestra una vez y no queda guardado en texto plano.
-        flash.addFlashAttribute("tokenNodo", registro.token());
-        flash.addFlashAttribute("tokenNodoId", registro.nodo().getIdDispositivo());
+        flash.addFlashAttribute("tokenNodo", creado.tokenPlano());
+        flash.addFlashAttribute("tokenNodoId", creado.dispositivo().getIdDispositivo());
+        return "redirect:/cultivos/" + id;
+    }
+
+    @PostMapping("/{id:\\d+}/dispositivos/{idDispositivo:\\d+}/estado")
+    @PreAuthorize("@permisos.puedeAdministrar(#id, authentication)")
+    public String cambiarEstadoDispositivo(@PathVariable Integer id,
+                                           @PathVariable Integer idDispositivo,
+                                           @RequestParam boolean activar,
+                                           Authentication auth,
+                                           RedirectAttributes flash) {
+        nodos.cambiarEstado(id, idDispositivo, activar, auth.getName());
+        flash.addFlashAttribute("mensaje",
+                "Nodo #" + idDispositivo + (activar ? " activado" : " desactivado"));
+        return "redirect:/cultivos/" + id;
+    }
+
+    @PostMapping("/{id:\\d+}/dispositivos/{idDispositivo:\\d+}/token")
+    @PreAuthorize("@permisos.puedeAdministrar(#id, authentication)")
+    public String regenerarTokenDispositivo(@PathVariable Integer id,
+                                            @PathVariable Integer idDispositivo,
+                                            Authentication auth,
+                                            RedirectAttributes flash) {
+        String tokenPlano = nodos.regenerarToken(id, idDispositivo, auth.getName());
+        flash.addFlashAttribute("mensaje",
+                "Token regenerado para nodo #" + idDispositivo + ". El token anterior quedó invalidado.");
+        flash.addFlashAttribute("tokenNodo", tokenPlano);
+        flash.addFlashAttribute("tokenNodoId", idDispositivo);
         return "redirect:/cultivos/" + id;
     }
 

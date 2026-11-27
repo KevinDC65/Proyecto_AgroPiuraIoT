@@ -1,6 +1,7 @@
 package com.utp.AgroPiuraIoT.service;
 
 import com.utp.AgroPiuraIoT.exception.RecursoNoEncontradoException;
+import com.utp.AgroPiuraIoT.model.RangoFisico;
 import com.utp.AgroPiuraIoT.model.entity.Cultivo;
 import com.utp.AgroPiuraIoT.model.entity.DispositivoIoT;
 import com.utp.AgroPiuraIoT.model.entity.Lectura;
@@ -107,7 +108,18 @@ public class SimuladorService {
         } else {
             valor = min + (max - min) * azar.nextDouble();
         }
-        // Las variables medidas no son negativas (humedad, pH, temperatura en Piura).
-        return BigDecimal.valueOf(Math.max(0, valor)).setScale(2, RoundingMode.HALF_UP);
+        // Mantener los valores simulados dentro del rango físico de cada variable.
+        BigDecimal resultado = BigDecimal.valueOf(valor).setScale(2, RoundingMode.HALF_UP);
+        return RangoFisico.de(sensor.getTipoSensor().getNombreTipo())
+                .map(rango -> {
+                    if (resultado.compareTo(rango.getMinimo()) < 0) {
+                        return rango.getMinimo().setScale(2, RoundingMode.HALF_UP);
+                    }
+                    if (resultado.compareTo(rango.getMaximo()) > 0) {
+                        return rango.getMaximo().setScale(2, RoundingMode.HALF_UP);
+                    }
+                    return resultado;
+                })
+                .orElseGet(() -> BigDecimal.valueOf(Math.max(0, valor)).setScale(2, RoundingMode.HALF_UP));
     }
 }

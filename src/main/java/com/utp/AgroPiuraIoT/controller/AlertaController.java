@@ -1,6 +1,7 @@
 package com.utp.AgroPiuraIoT.controller;
 
 import com.utp.AgroPiuraIoT.service.AlertasService;
+import com.utp.AgroPiuraIoT.service.NodoService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -15,15 +16,18 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class AlertaController {
 
     private final AlertasService alertas;
+    private final NodoService nodos;
 
-    public AlertaController(AlertasService alertas) {
+    public AlertaController(AlertasService alertas, NodoService nodos) {
         this.alertas = alertas;
+        this.nodos = nodos;
     }
 
     @GetMapping("/alertas")
     public String lista(Authentication auth, Model model) {
         model.addAttribute("alertas", alertas.listarPara(auth.getName()));
         model.addAttribute("notificaciones", alertas.notificacionesDe(auth.getName()));
+        model.addAttribute("alertasNodos", nodos.listarAlertasNodoPara(auth.getName()));
         return "alertas/lista";
     }
 
@@ -39,6 +43,14 @@ public class AlertaController {
     public String marcarAtendida(@PathVariable Integer idAlerta, RedirectAttributes flash) {
         alertas.marcarAtendida(idAlerta);
         flash.addFlashAttribute("mensaje", "Alerta marcada como atendida.");
+        return "redirect:/alertas";
+    }
+
+    @PostMapping("/alertas/nodos/{idAlertaNodo:\\d+}/atender")
+    @PreAuthorize("@permisos.puedeVerAlertaNodo(#idAlertaNodo, authentication)")
+    public String marcarAlertaNodoAtendida(@PathVariable Integer idAlertaNodo, RedirectAttributes flash) {
+        nodos.marcarAlertaNodoAtendida(idAlertaNodo);
+        flash.addFlashAttribute("mensaje", "Alerta de nodo marcada como atendida.");
         return "redirect:/alertas";
     }
 }

@@ -1,12 +1,15 @@
 package com.utp.AgroPiuraIoT.repository;
 
 import com.utp.AgroPiuraIoT.model.entity.DispositivoIoT;
+import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface DispositivoIoTRepository extends JpaRepository<DispositivoIoT, Integer> {
+
+    List<DispositivoIoT> findByTokenHashIsNotNull();
 
     /**
      * Borra los nodos asignados únicamente a este cultivo. Sus sensores, lecturas

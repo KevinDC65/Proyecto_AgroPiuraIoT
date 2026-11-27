@@ -28,3 +28,18 @@ agro.demo.admin.habilitado=true
 # Errores: nunca exponer trazas ni mensajes internos al usuario
 server.error.include-stacktrace=never
 server.error.include-message=never
+
+# C1 — Bloqueo temporal por intentos fallidos de inicio de sesión
+agro.seguridad.max-intentos-fallidos=5
+agro.seguridad.bloqueo-minutos=15
+
+# B1 — Severidad de episodios de alerta (% de desviación respecto al ancho del rango y minutos para escalar)
+agro.alertas.severidad.porcentaje-moderada=10
+agro.alertas.severidad.porcentaje-critica=25
+agro.alertas.severidad.minutos-escalamiento=60
+
+# A2 — Estado de nodos IoT y detección de desconexión
+agro.iot.nodo.minutos-en-linea=30
+agro.iot.nodo.horas-alerta-sin-conexion=6
+agro.iot.monitor.habilitado=true
+agro.iot.monitor.intervalo-ms=300000

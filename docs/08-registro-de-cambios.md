@@ -6,18 +6,22 @@ el estado actual sin leer todo el código.
 
 ---
 
+## 27/11/2026 · Integración de A1 con A2, B1 y C1
+
+- **Unificación con A1 (#1):** `RangoFisico` (enum), `NodoTokenService` (tokens Base64 URL de 43 caracteres en BCrypt), `CultivoService.registrarNodo`, aviso flash `tokenNodo` y contrato `TelemetriaResponse` (`ok` / `parcial` / `rechazado`, `rechazos`) integrados con la autenticación HTTP Bearer de A2 (`TokenNodoService` + `TokenNodoAuthenticationFilter`), la gestión/monitoreo de nodos (`NodoService`) y las validaciones de B1 (`UmbralService`, `SimuladorService`).
+
 ## 25/11/2026 · A1 · Base de la telemetría IoT (#1)
 
 Prepara todo lo necesario para que un nodo ESP32 real envíe lecturas de forma segura y con
-datos válidos. La ruta `/api/telemetria` sigue cerrada hasta A2.
+datos válidos.
 
 - **Contrato de la API** en `docs/12-api-de-lecturas.md`: JSON con `idNodo` y lista de
   `{tipoSensor, valor}`, `fechaHora` opcional, respuestas `ok` / `parcial` / `rechazado`
   y códigos 200, 400, 401 y 404. `idNodo` se acepta como alias de `idDispositivo`.
 - **Token por nodo:** al registrar un nodo se genera un token aleatorio (`SecureRandom`,
   256 bits), se guarda solo su hash BCrypt y se muestra **una vez** en el detalle del
-  cultivo. `NodoTokenService.verificar(idNodo, token)` queda listo para A2. El token nunca
-  se escribe en logs.
+  cultivo. `NodoTokenService.verificar(idNodo, token)` y `asignarToken(nodo)` proveen el
+  núcleo de autenticación sin escribir nunca el token en logs.
 - **Validación física** (`model/RangoFisico`): humedad 0–100 %, pH 0–14, temperatura −10 a
   60 °C. Una lectura imposible no se guarda ni genera alertas, queda en el log como posible
   falla de sensor y se informa en la respuesta. Disponible para B1.
@@ -27,7 +31,31 @@ datos válidos. La ruta `/api/telemetria` sigue cerrada hasta A2.
   (columnas `token_hash` y `ultima_conexion`), aplicada también en `esquema.sql` y en
   `DispositivoIoT`. **Una BD existente debe ejecutar la migración** o la app no arranca.
 - **Pruebas:** `NodoTokenServiceTest`, `TelemetriaServiceTest` y `RangoFisicoTest` (18 nuevas);
-  `CultivoControllerTest` comprueba que el token llega en el aviso. Total: 138 (126 activas).
+  `CultivoControllerTest` comprueba que el token llega en el aviso.
+
+## 24/11/2026 · API de lecturas, estado de nodos y cliente IoT (A2)
+
+- **API autenticada (`POST /api/telemetria`):** cadena `SecurityFilterChain` separada (`@Order(1)`) exclusiva para `/api/**` (stateless, sin CSRF ni redirección al login, respuestas JSON `401`/`403`) con autenticación por `Authorization: Bearer <token>` (`TokenNodoService` + `TokenNodoAuthenticationFilter`), sin afectar sesión ni CSRF del resto de rutas web.
+- **Alertas de desconexión y última conexión:** migración `database/migraciones/2026-11-24_A2_api_telemetria_y_nodos.sql` (tabla `alerta_nodo` e índices). Al recibir lecturas, `TelemetriaService` actualiza `ultima_conexion` y cierra alertas abiertas de `nodo_sin_conexion`.
+- **Estado de nodos:** `NodoService` clasifica nodos en **En línea** (últimos 30 min configurables), **Sin conexión** o **Inactivo**, mostrados con forma + texto en `cultivos/detalle.html` y `dashboard.html`, y abre alertas `nodo_sin_conexion` tras superar las horas configuradas.
+- **Gestión administrativa auditada:** activar/desactivar nodo y regenerar token solo para administradores del cultivo (`@PreAuthorize`), con registro en `AuditoriaService` (`NODO_REGISTRADO`, `NODO_ACTIVADO`, `NODO_DESACTIVADO`, `NODO_TOKEN_REGENERADO`).
+- **Cliente IoT y pruebas:** carpeta `iot/` (`esp32_agropiura.ino`, `simulador_nodo.py`, `simulador-nodo.ps1`, `iot/README.md`). Reactivado `TelemetriaControllerTest` y añadida `NodoServiceTest`.
+
+## 24/11/2026 · Reglas de cuenta, auditoría (C1) y alertas por episodio y severidad (B1)
+
+### C1 · Reglas de cuenta y auditoría
+- **Estado y bloqueo temporal:** `AppUserDetailsService` valida `estado = 'activo'` y `bloqueado_hasta`. Nuevo `EventosAutenticacionListener` (y bean `AuthenticationEventPublisher` en `SecurityConfig`) que cuenta intentos fallidos, bloquea 15 minutos tras 5 fallos (configurables en `agro.seguridad.*`) y reinicia el contador al entrar con éxito o vencer el bloqueo.
+- **No enumeración de cuentas:** mensaje genérico único en `login.html` para cualquier fallo de autenticación.
+- **Política de contraseñas:** mínimo 8 caracteres con letras y números validados en `RegistroRequest` y `UsuarioService.validarPoliticaContrasena`.
+- **Auditoría:** nueva tabla `auditoria`, entidad `Auditoria`, repositorio y servicio `AuditoriaService` documentado en `docs/02-arquitectura.md` para A2, B2, C2 y D2. Registra `LOGIN_EXITOSO`, `LOGIN_FALLIDO` y `CUENTA_BLOQUEADA`.
+- **Migración:** `database/migraciones/2026-11-24_C1_reglas_cuenta_auditoria.sql` y actualización de `database/esquema.sql`.
+
+### B1 · Alertas por episodio y severidad
+- **Episodios:** nuevas columnas `estado` (`abierta`/`cerrada`), `severidad` (`leve`/`moderada`/`critica`), `direccion` (`bajo`/`alto`), `valor_extremo`, `cantidad_lecturas` y `fecha_cierre` en `alertas`. `AlertasService.evaluar(...)` agrupa lecturas consecutivas fuera de rango sin duplicar alertas ni notificaciones, cierra el episodio al volver al rango y abre uno nuevo en la siguiente salida.
+- **Severidad:** cálculo por desviación respecto al ancho del rango y escalamiento por duración configurable vía `agro.alertas.severidad.*`.
+- **Rangos físicos compartidos con A1:** `model/RangoFisico` usado en `UmbralService.guardar` (rechaza umbrales fuera de rango físico, como pH 20 o humedad 150) y en `SimuladorService`.
+- **Contador del menú e interfaz:** `NotificacionesAdvice` y `DashboardService` cuentan episodios abiertos; `alertas/lista.html` y `app.css` muestran severidad con forma geométrica y texto (sin depender solo del color) junto con el estado del episodio.
+- **Migración:** `database/migraciones/2026-11-24_B1_alertas_episodios_severidad.sql` y actualización de `database/esquema.sql`.
 
 ---
 

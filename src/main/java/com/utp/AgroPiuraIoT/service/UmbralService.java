@@ -2,6 +2,7 @@ package com.utp.AgroPiuraIoT.service;
 
 import com.utp.AgroPiuraIoT.exception.RecursoNoEncontradoException;
 import com.utp.AgroPiuraIoT.exception.ReglaNegocioException;
+import com.utp.AgroPiuraIoT.model.RangoFisico;
 import com.utp.AgroPiuraIoT.model.dto.UmbralForm;
 import com.utp.AgroPiuraIoT.model.entity.Cultivo;
 import com.utp.AgroPiuraIoT.model.entity.DispositivoIoT;
@@ -55,6 +56,7 @@ public class UmbralService {
         TipoSensor tipoSensor = tipos.findById(form.idTipoSensor())
                 .orElseThrow(() -> new ReglaNegocioException(
                         "Tipo de sensor no reconocido: " + form.idTipoSensor()));
+        validarRangoFisico(tipoSensor, form);
 
         Umbral umbral = umbrales
                 .findByCultivoIdCultivoAndTipoSensorIdTipoSensor(idCultivo, form.idTipoSensor())
@@ -97,5 +99,17 @@ public class UmbralService {
         if (form.valorMinimo().compareTo(form.valorMaximo()) > 0) {
             throw new ReglaNegocioException("El valor mínimo no puede ser mayor que el valor máximo");
         }
+    }
+
+    private void validarRangoFisico(TipoSensor tipoSensor, UmbralForm form) {
+        RangoFisico.de(tipoSensor.getNombreTipo()).ifPresent(rango -> {
+            if (!rango.admite(form.valorMinimo()) || !rango.admite(form.valorMaximo())) {
+                String nombreLegible = tipoSensor.getNombreTipo().replace('_', ' ');
+                throw new ReglaNegocioException(
+                        "Los valores para " + nombreLegible
+                                + " deben estar dentro del rango físico permitido ("
+                                + rango.describir() + ")");
+            }
+        });
     }
 }

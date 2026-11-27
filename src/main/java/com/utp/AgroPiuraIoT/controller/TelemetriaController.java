@@ -7,6 +7,7 @@ import com.utp.AgroPiuraIoT.service.TelemetriaService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -24,8 +25,11 @@ public class TelemetriaController {
     }
 
     @PostMapping
-    public ResponseEntity<TelemetriaResponse> recibirTelemetria(@RequestBody(required = false) TelemetriaRequest request) {
-        TelemetriaResponse response = telemetriaService.procesar(request);
+    public ResponseEntity<TelemetriaResponse> recibirTelemetria(
+            @RequestBody(required = false) TelemetriaRequest request,
+            Authentication auth) {
+        Integer idDispositivo = auth != null && auth.getPrincipal() instanceof Integer id ? id : null;
+        TelemetriaResponse response = telemetriaService.procesar(request, idDispositivo);
         return ResponseEntity.ok(response);
     }
 

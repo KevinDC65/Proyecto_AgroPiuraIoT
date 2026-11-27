@@ -14,13 +14,20 @@ import java.time.LocalDateTime;
 @Table(name = "dispositivo_iot")
 public class DispositivoIoT {
 
+    public static final String ESTADO_ACTIVO = "activo";
+    public static final String ESTADO_INACTIVO = "inactivo";
+
+    public static final String CONEXION_EN_LINEA = "EN_LINEA";
+    public static final String CONEXION_SIN_CONEXION = "SIN_CONEXION";
+    public static final String CONEXION_INACTIVO = "INACTIVO";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_dispositivo")
     private Integer idDispositivo;
 
     @Column(nullable = false, length = 50)
-    private String estado = "activo";
+    private String estado = ESTADO_ACTIVO;
 
     @Column(name = "fecha_instalacion")
     private LocalDate fechaInstalacion;
@@ -39,16 +46,20 @@ public class DispositivoIoT {
             fechaInstalacion = LocalDate.now();
         }
         if (estado == null) {
-            estado = "activo";
+            estado = ESTADO_ACTIVO;
         }
     }
 
     public boolean estaActivo() {
-        return "activo".equalsIgnoreCase(estado);
+        return ESTADO_ACTIVO.equalsIgnoreCase(estado);
+    }
+
+    public void marcarActivo() {
+        this.estado = ESTADO_ACTIVO;
     }
 
     public void marcarInactivo() {
-        this.estado = "inactivo";
+        this.estado = ESTADO_INACTIVO;
     }
 
     public boolean tieneToken() {
@@ -57,6 +68,20 @@ public class DispositivoIoT {
 
     public void registrarConexion(LocalDateTime momento) {
         this.ultimaConexion = momento;
+    }
+
+    public boolean estaEnLinea(LocalDateTime ahora, long minutosEnLinea) {
+        if (!estaActivo() || ultimaConexion == null || ahora == null) {
+            return false;
+        }
+        return !ultimaConexion.isBefore(ahora.minusMinutes(minutosEnLinea));
+    }
+
+    public String estadoConexion(LocalDateTime ahora, long minutosEnLinea) {
+        if (!estaActivo()) {
+            return CONEXION_INACTIVO;
+        }
+        return estaEnLinea(ahora, minutosEnLinea) ? CONEXION_EN_LINEA : CONEXION_SIN_CONEXION;
     }
 
     public Integer getIdDispositivo() {
